@@ -4,6 +4,7 @@
     "build": {
       "flags": [
         "-I board/config",
+        "-I application/inc",
         "-I drivers/chirpmicro/inc",
         "-I drivers/chirpmicro/src"
         

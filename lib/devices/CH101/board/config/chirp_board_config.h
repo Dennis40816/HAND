@@ -40,6 +40,7 @@
 
 /* Settings for the Chirp SmartSonic board */
 #define CHIRP_MAX_NUM_SENSORS 		4		// maximum possible number of sensor devices
+
 #define CHIRP_NUM_I2C_BUSES 		2		// number of I2C buses used by sensors
 
 #define CHIRP_PIN_PROG   {CHIRP_PROG_0, CHIRP_PROG_1, CHIRP_PROG_2, CHIRP_PROG_3}

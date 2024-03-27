@@ -32,11 +32,13 @@
 // folder lib/device/CH101.
 #define HAND_BUILD_TARGET_PORTING_CH101
 
-// #define HAND_BUILD_TARGET_BOS1901
 // #define HAND_BUILD_TARGET_ALL
 
 /* USER MODIFY: Test Options End */
 
 /*========================= ESP-IDF config ===========================*/
+
+/* devices pin definitions */
+#include "device_config.h";
 
 #endif

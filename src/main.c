@@ -14,7 +14,7 @@ void app_main(void);
 #include "freertos/task.h"
 
 /* config include */
-#include "board_config.h"
+#include "hand_app_config.h"
 
 /* test include */
 #include "drivers/chirpmicro/inc/chirp_bsp.h"

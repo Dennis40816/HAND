@@ -1,0 +1,10 @@
+{
+    "name": "ESP-IDF-S3-MINI",
+    "version": "1.0", 
+    "build": {
+      "flags": [
+        "-I inc"
+      ]
+    }
+}
+  
