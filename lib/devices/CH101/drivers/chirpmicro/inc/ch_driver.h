@@ -16,7 +16,7 @@
  */
 
 /*
- * Copyright ï¿½ 2016-2020, Chirp Microsystems.  All rights reserved.
+ * Copyright © 2016-2020, Chirp Microsystems.  All rights reserved.
  *
  * Chirp Microsystems CONFIDENTIAL
  *
@@ -41,7 +41,6 @@
 //#define CHDRV_DEBUG
 
 #include "chirp_board_config.h"
-
 #include "soniclib.h"
 
 #include <stdint.h>

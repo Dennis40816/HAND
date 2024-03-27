@@ -1,0 +1,13 @@
+{
+    "name": "CH101",
+    "version": "1.31", 
+    "build": {
+      "flags": [
+        "-I board/config",
+        "-I drivers/chirpmicro/inc",
+        "-I drivers/chirpmicro/src"
+        
+      ]
+    }
+}
+  

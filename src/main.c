@@ -17,7 +17,7 @@ void app_main(void);
 #include "board_config.h"
 
 /* test include */
-#include "drivers/chirpmicro/chirp_bsp.h"
+#include "drivers/chirpmicro/inc/chirp_bsp.h"
 #include "miniz.h"
 /* end test include */
 
