@@ -39,6 +39,6 @@
 /*========================= ESP-IDF config ===========================*/
 
 /* devices pin definitions */
-#include "device_config.h";
+#include "device_config.h"
 
 #endif

@@ -4,10 +4,13 @@
     "build": {
       "flags": [
         "-I board/config",
+
+        "-I board/HAL/inc",
         "-I application/inc",
         "-I drivers/chirpmicro/inc",
+
+        "-I board/HAL/src",
         "-I drivers/chirpmicro/src"
-        
       ]
     }
 }
