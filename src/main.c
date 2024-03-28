@@ -122,9 +122,9 @@ static void gpio_init(void) {
                        (void*)GPIO_CH101_INT);
 }
 
-static void tca6408a_init() {
-  tca6408a_set_output(TCA_CH101_RESET | TCA_CH101_PROG);
-  tca6408a_set_input(TCA_CH101_INT);
+static void tca6408a_init(tca6408a_t* tca_instance) {
+  tca6408a_set_output(TCA_CH101_RESET | TCA_CH101_PROG, tca_instance);
+  tca6408a_set_input(TCA_CH101_INT, tca_instance);
 }
 
 void isr_monitor_task(void* para) {
@@ -163,10 +163,15 @@ void app_main(void) {
   // wait for connection
 
    */
+
+  tca6408a_t tca_instance = {
+    .i2c_port = I2C_NUM_0
+  };
+
   i2c_master_init();
   gpio_init();
 
-  tca6408a_init();
+  tca6408a_init(&tca_instance);
 
   compile_test();
 

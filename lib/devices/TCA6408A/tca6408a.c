@@ -7,7 +7,7 @@
 /**
  * Write a value to a register
  */
-esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value) {
+esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value, tca6408a_t* config) {
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
   i2c_master_write_byte(
@@ -15,7 +15,7 @@ esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value) {
   i2c_master_write_byte(cmd, reg, true);
   i2c_master_write_byte(cmd, value, true);
   i2c_master_stop(cmd);
-  esp_err_t ret = i2c_master_cmd_begin(TCA6408A_DEFAULT_I2C, cmd,
+  esp_err_t ret = i2c_master_cmd_begin(config->i2c_port, cmd,
                                        1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
   return ret;
@@ -24,7 +24,7 @@ esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value) {
 /**
  * Read a value from a register
  */
-esp_err_t tca6408a_read_register(uint8_t reg, uint8_t *value) {
+esp_err_t tca6408a_read_register(uint8_t reg, uint8_t *value, tca6408a_t* config) {
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
   i2c_master_write_byte(
@@ -35,7 +35,7 @@ esp_err_t tca6408a_read_register(uint8_t reg, uint8_t *value) {
       cmd, (TCA6408A_DEFAULT_I2C_ADDRESS << 1) | I2C_MASTER_READ, true);
   i2c_master_read_byte(cmd, value, I2C_MASTER_LAST_NACK);
   i2c_master_stop(cmd);
-  esp_err_t ret = i2c_master_cmd_begin(TCA6408A_DEFAULT_I2C, cmd,
+  esp_err_t ret = i2c_master_cmd_begin(config->i2c_port, cmd,
                                        1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
   return ret;
@@ -47,12 +47,12 @@ esp_err_t tca6408a_read_register(uint8_t reg, uint8_t *value) {
  * @param value a mask that you want to change it to output
  * @return esp_err_t
  */
-esp_err_t tca6408a_set_output(uint8_t value) {
+esp_err_t tca6408a_set_output(uint8_t value, tca6408a_t* config) {
   uint8_t current_val;
-  tca6408a_read_register(TCA6408A_CONFIG_REG, &current_val);
+  tca6408a_read_register(TCA6408A_CONFIG_REG, &current_val, config);
 
   uint8_t final_val = current_val & (~value);
-  return tca6408a_write_register(TCA6408A_CONFIG_REG, final_val);
+  return tca6408a_write_register(TCA6408A_CONFIG_REG, final_val, config);
 }
 
 /**
@@ -61,12 +61,12 @@ esp_err_t tca6408a_set_output(uint8_t value) {
  * @param value a mask that you want to change it to output
  * @return esp_err_t
  */
-esp_err_t tca6408a_set_input(uint8_t value) {
+esp_err_t tca6408a_set_input(uint8_t value, tca6408a_t* config) {
   uint8_t current_val;
-  tca6408a_read_register(TCA6408A_CONFIG_REG, &current_val);
+  tca6408a_read_register(TCA6408A_CONFIG_REG, &current_val, config);
 
   uint8_t final_val = current_val | value;
-  return tca6408a_write_register(TCA6408A_CONFIG_REG, final_val);
+  return tca6408a_write_register(TCA6408A_CONFIG_REG, final_val, config);
 }
 
 /**
@@ -77,13 +77,13 @@ esp_err_t tca6408a_set_input(uint8_t value) {
  * @example tca6408a_set_high(1 << 7, 1 << 7), set p7 to high
  * @return esp_err_t
  */
-esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask) {
+esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, tca6408a_t* config) {
   uint8_t current_val;
-  tca6408a_read_register(TCA6408A_OUTPUT_REG, &current_val);
+  tca6408a_read_register(TCA6408A_OUTPUT_REG, &current_val, config);
 
   // and reverse mask, and value -> keep not
   uint8_t final_val = (current_val & (~mask)) | (value & mask);
-  return tca6408a_write_register(TCA6408A_OUTPUT_REG, final_val);
+  return tca6408a_write_register(TCA6408A_OUTPUT_REG, final_val, config);
 }
 
 /*

@@ -13,15 +13,24 @@
 #define TCA6408A_POLARITY_REG  0x02
 #define TCA6408A_CONFIG_REG    0x03
 
-#define TCA6408A_DEFAULT_I2C   I2C_NUM_0
+/* Config macros */
+#define TCA6408A_CONFIG_OUTPUT (0)
+#define TCA6408A_CONFIG_INPUT  (1)
 
-esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value);
-esp_err_t tca6408a_read_register(uint8_t reg, uint8_t *value);
-esp_err_t tca6408a_set_output(uint8_t value);
-esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask);
-esp_err_t tca6408a_set_input(uint8_t value);
+#ifdef ESP_PLATFORM 
+typedef i2c_port_t i2c_port_type ;
+#else 
+typedef i2c_port_t int;
+#endif
 
-// void tca6408a_init(void);
-// void tca6408a_test_read(void);
+typedef struct {
+    i2c_port_type i2c_port
+} tca6408a_t;
+
+esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value, tca6408a_t* config);
+esp_err_t tca6408a_read_register(uint8_t reg, uint8_t *value, tca6408a_t* config);
+esp_err_t tca6408a_set_output(uint8_t value, tca6408a_t* config);
+esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, tca6408a_t* config);
+esp_err_t tca6408a_set_input(uint8_t value, tca6408a_t* config);
 
 #endif
