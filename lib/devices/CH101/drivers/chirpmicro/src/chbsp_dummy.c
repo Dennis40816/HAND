@@ -11,7 +11,7 @@
  */
 
 /*
- * Copyright © 2017-2019 Chirp Microsystems.  All rights reserved.
+ * Copyright ï¿½ 2017-2019 Chirp Microsystems.  All rights reserved.
  */
 
 #include "chirp_bsp.h"
@@ -30,7 +30,7 @@ __attribute__((weak)) void chbsp_print_str(char *str) {
 	(void)(str);
 }
 
-__attribute__((weak)) uint32_t chbsp_timestamp_ms() {
+__attribute__((weak)) int64_t chbsp_timestamp_ms() {
 	return 0;
 }
 

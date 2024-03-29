@@ -20,37 +20,25 @@
  * OF THE SOFTWARE.
  * ________________________________________________________________________________________________________
  */
-/**
- * \file chirp_board_config.h
+
+/*! \file ultrasound_display_config_info.h */
+#ifndef ULTRASOUND_DISPLAY_CONFIG_INFO_H
+#define ULTRASOUND_DISPLAY_CONFIG_INFO_H
+
+#include <stdint.h>
+
+#include "soniclib.h"
+
+/*
+ * Display the configuration values for a sensor
  *
- * This file defines required symbols used to build an application with the Chirp SonicLib
- * API and driver.  These symbols are used for static array allocations and counters in SonicLib 
- * (and often applications), and are based on the number of specific resources on the target board.
+ * This function displays the current configuration settings for an individual
+ * sensor.  The operating mode, maximum range, and static target rejection
+ * range (if used) are displayed.
  *
- * Two symbols must be defined:
- *  CHIRP_MAX_NUM_SENSORS - the number of possible sensor devices (i.e. the number of sensor ports)
- *  CHIRP_NUM_I2C_BUSES - the number of I2C buses on the board that are used for those sensor ports
- *
- * This file must be in the C pre-processor include path when the application is built with SonicLib
- * and this board support package.
+ * For CH201 sensors only, the multiple detection threshold values are also
+ * displayed.
  */
+uint8_t ultrasound_display_config_info(ch_dev_t *dev_ptr);
 
-#ifndef CHIRP_BOARD_CONFIG_H
-#define CHIRP_BOARD_CONFIG_H
-
-/* Settings for the Chirp SmartSonic board */
-#define CHIRP_MAX_NUM_SENSORS 		4		// maximum possible number of sensor devices
-#define CHIRP_USE_NUM_SENSORS       1
-
-#define CHIRP_NUM_I2C_BUSES 		1		// number of I2C buses used by sensors
-
-#define CHIRP_PIN_PROG   {CHIRP_PROG_0, CHIRP_PROG_1, CHIRP_PROG_2, CHIRP_PROG_3}
-#define CHIRP_PIN_IO     {CHIRP_INT_0, CHIRP_INT_1, CHIRP_INT_2, CHIRP_INT_3}
-/* esp-idf don't need irq mask */
-// #define CHIRP_PIN_IO_IRQ {PIN_EXT_ChirpINT0_MASK, PIN_EXT_ChirpINT1_MASK, PIN_EXT_ChirpINT2_MASK, PIN_EXT_ChirpINT3_MASK}
-#define CHIRP_PIN_LED    {CHIRP_OK_0, CHIRP_OK_3, CHIRP_OK_2, CHIRP_OK_1}
-
-/* Deactivate use of debug I2C interface */
-#define USE_STD_I2C_FOR_IQ		(1)
-
-#endif /* CHIRP_BOARD_CONFIG_H */
+#endif /* ULTRASOUND_DISPLAY_CONFIG_INFO_H */

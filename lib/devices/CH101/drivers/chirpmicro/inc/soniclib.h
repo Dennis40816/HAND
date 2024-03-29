@@ -58,7 +58,7 @@
  */
 
 /*
- Copyright © 2019-2021, Chirp Microsystems.  All rights reserved.
+ Copyright ï¿½ 2019-2021, Chirp Microsystems.  All rights reserved.
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -353,11 +353,15 @@ typedef struct {
 //! Data-ready interrupt callback routine pointer.
 typedef void (*ch_io_int_callback_t)(ch_group_t *grp_ptr, uint8_t io_index); 
 //
+//! Wrapper function pointer for esp-idf system
+typedef void (*ch_platform_callback_t)(void*);
+//
 //! Non-blocking I/O complete callback routine pointer.
 typedef void (*ch_io_complete_callback_t)(ch_group_t *grp_ptr);		
 //
 //! Periodic timer callback routine pointer.
-typedef void (*ch_timer_callback_t)(void);			
+typedef void (*ch_timer_callback_t)(void);
+
 
 
 //!  Chirp sensor group configuration structure.

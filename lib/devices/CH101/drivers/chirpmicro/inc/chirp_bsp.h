@@ -130,7 +130,7 @@
  */
 
 /*
- Copyright © 2016-2019, Chirp Microsystems. All rights reserved.
+ Copyright ï¿½ 2016-2019, Chirp Microsystems. All rights reserved.
 
  Chirp Microsystems CONFIDENTIAL
 
@@ -536,7 +536,7 @@ void chbsp_delay_ms(uint32_t ms);
  *
  * \note OPTIONAL - Implementing this function is optional and only needed for debugging support.
  */
-uint32_t chbsp_timestamp_ms(void);
+int64_t chbsp_timestamp_ms(void);
 
 /*!
  * \brief Initialize the host's I2C hardware.
@@ -935,7 +935,7 @@ uint8_t chbsp_periodic_timer_stop(void);
  * functions, so are not required.  However, they are used in examples and other applications 
  * from Chirp.
  */
-void chbsp_periodic_timer_handler(void);
+void chbsp_periodic_timer_handler(void* para);
 
 /*!
  * \brief Change the period for interrupts
