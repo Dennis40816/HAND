@@ -8,7 +8,7 @@
  * Write a value to a register
  */
 esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value,
-                                  tca6408a_t* config) {
+                                  const tca6408a_t* config) {
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
   /* TODO: can be improved by i2c_master_write */
@@ -27,7 +27,7 @@ esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value,
  * Read a value from a register
  */
 esp_err_t tca6408a_read_register(uint8_t reg, uint8_t* value,
-                                 tca6408a_t* config) {
+                                 const tca6408a_t* config) {
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
   /* TODO: can be improved by i2c_master_write */
@@ -59,7 +59,7 @@ esp_err_t tca6408a_read_register(uint8_t reg, uint8_t* value,
  * @return esp_err_t Returns ESP_OK if the operation was successful, or an error
  * code if the operation failed.
  */
-esp_err_t tca6408a_set_output(uint8_t value, tca6408a_t* config) {
+esp_err_t tca6408a_set_output(uint8_t value, const tca6408a_t* config) {
   uint8_t current_val;
   tca6408a_read_register(TCA6408A_CONFIG_REG, &current_val, config);
 
@@ -81,7 +81,7 @@ esp_err_t tca6408a_set_output(uint8_t value, tca6408a_t* config) {
  * @return esp_err_t Returns ESP_OK if the operation was successful, or an error
  * code if the operation failed.
  */
-esp_err_t tca6408a_set_input(uint8_t value, tca6408a_t* config) {
+esp_err_t tca6408a_set_input(uint8_t value, const tca6408a_t* config) {
   uint8_t current_val;
   tca6408a_read_register(TCA6408A_CONFIG_REG, &current_val, config);
 
@@ -106,7 +106,7 @@ esp_err_t tca6408a_set_input(uint8_t value, tca6408a_t* config) {
  * @return esp_err_t Returns ESP_OK if the write operation was successful, or an
  * error code if the operation failed.
  */
-esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, tca6408a_t* config) {
+esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, const tca6408a_t* config) {
   uint8_t current_val;
   tca6408a_read_register(TCA6408A_OUTPUT_REG, &current_val, config);
 
@@ -123,7 +123,7 @@ esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, tca6408a_t* config) {
  * @example tca6408a_set_low(1 << 7, &config), sets P7 to low level
  * @return esp_err_t
  */
-esp_err_t tca6408a_set_low(uint8_t mask, tca6408a_t* config) {
+esp_err_t tca6408a_set_low(uint8_t mask, const tca6408a_t* config) {
   uint8_t current_val;
   tca6408a_read_register(TCA6408A_OUTPUT_REG, &current_val, config);
 

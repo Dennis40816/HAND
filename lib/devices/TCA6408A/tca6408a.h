@@ -29,12 +29,12 @@ typedef struct {
 } tca6408a_t;
 
 esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value,
-                                  tca6408a_t* config);
+                                  const tca6408a_t* config);
 esp_err_t tca6408a_read_register(uint8_t reg, uint8_t* value,
-                                 tca6408a_t* config);
-esp_err_t tca6408a_set_input(uint8_t value, tca6408a_t* config);
-esp_err_t tca6408a_set_output(uint8_t value, tca6408a_t* config);
-esp_err_t tca6408a_set_low(uint8_t mask, tca6408a_t* config);
-esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, tca6408a_t* config);
+                                 const tca6408a_t* config);
+esp_err_t tca6408a_set_input(uint8_t value, const tca6408a_t* config);
+esp_err_t tca6408a_set_output(uint8_t value, const tca6408a_t* config);
+esp_err_t tca6408a_set_low(uint8_t mask, const tca6408a_t* config);
+esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, const tca6408a_t* config);
 
 #endif
