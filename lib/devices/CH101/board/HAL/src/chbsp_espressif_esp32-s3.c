@@ -351,7 +351,7 @@ static void i2c_master1_init()
 esp_err_t i2c_master0_write_register(uint8_t address, uint8_t register_address,
                                      size_t len, uint8_t* register_value)
 {
-  i2c_port_t i2c_num = I2C_NUM_0;
+  i2c_port_t i2c_num = CHBSP_I2C_NUM;
 
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
@@ -391,6 +391,9 @@ esp_err_t i2c_master0_read_register(uint8_t address, uint8_t register_address,
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   /* start and info slave which internal reg address will be operated (write
    * before read) */
+
+  i2c_port_t i2c_num = CHBSP_I2C_NUM;
+
   i2c_master_start(cmd);
   i2c_master_write_byte(cmd, (address << 1) | I2C_MASTER_WRITE, true);
   i2c_master_write_byte(cmd, register_address, true);
@@ -405,7 +408,7 @@ esp_err_t i2c_master0_read_register(uint8_t address, uint8_t register_address,
   i2c_master_read_byte(cmd, register_val + register_len - 1, I2C_MASTER_NACK);
   i2c_master_stop(cmd);
 
-  esp_err_t ret = i2c_master_cmd_begin(tca6408a_config.i2c_port, cmd,
+  esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd,
                                        1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
 
@@ -415,7 +418,7 @@ esp_err_t i2c_master0_read_register(uint8_t address, uint8_t register_address,
 esp_err_t i2c_master0_read_register_raw(uint8_t address, size_t len,
                                         uint8_t* data)
 {
-  i2c_port_t i2c_num = I2C_NUM_0;
+  i2c_port_t i2c_num = CHBSP_I2C_NUM;
 
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
@@ -425,7 +428,7 @@ esp_err_t i2c_master0_read_register_raw(uint8_t address, size_t len,
     i2c_master_read(cmd, data, len - 1, I2C_MASTER_ACK);
   }
   i2c_master_read_byte(cmd, data + len - 1,
-                       I2C_MASTER_NACK);  // 最後一個字節後發送NACK
+                       I2C_MASTER_NACK);
   i2c_master_stop(cmd);
   esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
@@ -456,6 +459,7 @@ static void find_sensors(void)
   /* check sensor 0 */
   /* WARNING: there's only 1 CH101 for test config */
   ioport_set_pin_level(CHIRP_PROG_0, GPIO_LEVEL_HIGH);
+  tca6408a_test_read(&tca6408a_config);
 
   /* WARNING: move to ext_int_init, because esp-idf i2c driver requires delete
    * before reinstall. Not like samg55. */
@@ -463,7 +467,11 @@ static void find_sensors(void)
 
   sig_bytes[0] = 0;
   sig_bytes[1] = 0;
-  i2c_master0_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+  esp_err_t err = i2c_master0_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+  if (err != ESP_OK)
+  {
+    ESP_LOGE("find_sensors", "CH-101 I2C bus err: %d", err);
+  }
 
   int find_sensor_flag =
       (sig_bytes[0] == CH_SIG_BYTE_0) && (sig_bytes[1] == CH_SIG_BYTE_1);
