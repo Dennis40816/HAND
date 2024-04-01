@@ -146,17 +146,17 @@ set 0 is output
 /**
  * Test read function
  */
-// void tca6408a_test_read(void) {
-//     for (uint8_t target = 0x0; target <= TCA6408A_CONFIG_REG; ++target)
-//     {
-//         uint8_t data = 0;
-//         if (tca6408a_read_register(target, &data) == ESP_OK) {
-//             ESP_LOGI("tca6408a_lib", "Read data: %d%d%d%d %d%d%d%d. @%x",
-//             (data & 0x80) >> 7, (data & 0x40) >> 6, (data & 0x20) >> 5, (data
-//             & 0x10) >> 4, (data & 0x08) >> 3, (data & 0x04) >> 2, (data &
-//             0x02) >> 1, (data & 0x01), target);
-//         } else {
-//             ESP_LOGE("tca6408a_lib", "Failed to read from TCA6408A\n");
-//         }
-//     }
-// }
+void tca6408a_test_read(const tca6408a_t* config) {
+    for (uint8_t target = 0x0; target <= TCA6408A_CONFIG_REG; ++target)
+    {
+        uint8_t data = 0;
+        if (tca6408a_read_register(target, &data, config) == ESP_OK) {
+            ESP_LOGI("tca6408a_lib", "Read data: %d%d%d%d %d%d%d%d. @%x",
+            (data & 0x80) >> 7, (data & 0x40) >> 6, (data & 0x20) >> 5, (data
+            & 0x10) >> 4, (data & 0x08) >> 3, (data & 0x04) >> 2, (data &
+            0x02) >> 1, (data & 0x01), target);
+        } else {
+            ESP_LOGI("tca6408a_lib", "Failed to read from TCA6408A\n");
+        }
+    }
+}

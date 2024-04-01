@@ -37,4 +37,7 @@ esp_err_t tca6408a_set_output(uint8_t value, const tca6408a_t* config);
 esp_err_t tca6408a_set_low(uint8_t mask, const tca6408a_t* config);
 esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, const tca6408a_t* config);
 
+/* Debug */
+void tca6408a_test_read(const tca6408a_t* config);
+
 #endif
