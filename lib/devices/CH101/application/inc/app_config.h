@@ -57,7 +57,7 @@
  */
 
 	/* CH101 GPR - general purpose rangefinding, standard range */
-#define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_init
+// #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_init
 
 	/* CH101 GPR NARROW - general purpose rangefinding, narrow FoV */
 // #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_narrow_init
@@ -66,7 +66,7 @@
 // #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_sr_init
  
 	/* CH101 GPR SR NARROW - general purpose rangefinding, short range, narrow FoV */ 
-//  #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_sr_narrow_init
+ #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_sr_narrow_init
 
 	/* CH201 GPRMT - general purpose rangefinding / multi threshold */
 // #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch201_gprmt_init	
@@ -98,7 +98,7 @@
  * here is greater than the maximum possible range, the maximum possible range 
  * will be used.
  */
-#define	CHIRP_SENSOR_MAX_RANGE_MM		(750)	/* maximum range, in mm */
+#define	CHIRP_SENSOR_MAX_RANGE_MM		(500)	/* maximum range, in mm */
 
 /* Static target rejection range
  * This value specifies if static target rejection (STR) will be used.  If
@@ -179,7 +179,7 @@
  * serial port, as ascii values, one per line.
  */
 
-// #define READ_AMPLITUDE_DATA		/* uncomment to readout amplitude data */
+#define READ_AMPLITUDE_DATA		/* uncomment to readout amplitude data */
 
 // #define OUTPUT_AMPLITUDE_DATA	/* uncomment to output data in ascii */
 

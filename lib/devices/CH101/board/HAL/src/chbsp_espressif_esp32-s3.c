@@ -58,8 +58,9 @@ uint32_t chirp_led_pins[] = CHIRP_PIN_LED;
 /* Chirp sensor group pointer */
 ch_group_t* sensor_group_ptr;
 
-/* static parameter storage for sensor 0 */
-ch_io_int_callback_parameter_t para0 = {.grp_ptr = NULL, .io_index = 0};
+/* Parameter storage for sensor 0 */
+ch_io_int_callback_parameter_t ch_io_it_cb_para0 = {.grp_ptr = NULL,
+                                                    .io_index = 0};
 
 /* TCA6408A settings */
 const tca6408a_t tca6408a_config = {.i2c_port = TCA6408A_I2C_NUM};
@@ -408,8 +409,7 @@ esp_err_t i2c_master0_read_register(uint8_t address, uint8_t register_address,
   i2c_master_read_byte(cmd, register_val + register_len - 1, I2C_MASTER_NACK);
   i2c_master_stop(cmd);
 
-  esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd,
-                                       1000 / portTICK_PERIOD_MS);
+  esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
 
   return ret;
@@ -427,8 +427,7 @@ esp_err_t i2c_master0_read_register_raw(uint8_t address, size_t len,
   {
     i2c_master_read(cmd, data, len - 1, I2C_MASTER_ACK);
   }
-  i2c_master_read_byte(cmd, data + len - 1,
-                       I2C_MASTER_NACK);
+  i2c_master_read_byte(cmd, data + len - 1, I2C_MASTER_NACK);
   i2c_master_stop(cmd);
   esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
@@ -467,7 +466,8 @@ static void find_sensors(void)
 
   sig_bytes[0] = 0;
   sig_bytes[1] = 0;
-  esp_err_t err = i2c_master0_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+  esp_err_t err =
+      i2c_master0_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
   if (err != ESP_OK)
   {
     ESP_LOGE("find_sensors", "CH-101 I2C bus err: %d", err);
@@ -480,13 +480,16 @@ static void find_sensors(void)
   ioport_set_pin_level(CHIRP_PROG_0, GPIO_LEVEL_LOW);
 }
 
-static void IRAM_ATTR chirp_isr_callback(void* isr_pin)
+static void IRAM_ATTR chirp_isr_callback(void* ch_io_cb_para)
 {
-  /* TODO */
   /* Do not use ESP_LOG in this function */
   ch_io_int_callback_parameter_t* para =
-      (ch_io_int_callback_parameter_t*)isr_pin;
-  io_int_callback_ptr(para->grp_ptr, para->io_index);
+      (ch_io_int_callback_parameter_t*)ch_io_cb_para;
+  if (para->grp_ptr->io_int_callback != NULL)
+  {
+    ch_io_int_callback_t func_ptr = para->grp_ptr->io_int_callback;
+    func_ptr(para->grp_ptr, para->io_index);
+  }
 }
 
 /* interrupt config */
@@ -756,7 +759,7 @@ void chbsp_group_pin_init(ch_group_t* grp_ptr)
   /* WARNING: we assume interrupt related flags already be set */
   ESP_LOGW("chbsp_group_pin_init",
            "We assume the interrupt config was done in ext_int_init and the "
-           "related flags never be changeed!");
+           "related flags never be changed!");
   // for(port_num = 0; port_num < grp_ptr->num_ports; port_num++ ) {
   // 	pio_configure(PIN_EXT_INTERRUPT_PIO, PIN_EXT_INTERRUPT_TYPE,
   // chirp_pin_io_irq[port_num], PIN_EXT_INTERRUPT_ATTR);
@@ -768,11 +771,13 @@ void chbsp_group_pin_init(ch_group_t* grp_ptr)
 
   /* Initialize PIO interrupt handler, interrupt on rising edge. */
   /* Note: gpio_install_isr_service() already called in ext_int_init() */
-  /* Note: do not create para0 in this function, which leads to pass
+  /* Note: do not create ch_io_it_cb_para0 in this function, which leads to pass
    * stack-allocated pointers to ISRs problem */
   /* create a callback for sensor 0 */
-
-  gpio_isr_handler_add(CHIRP_INT_IO6, chirp_isr_callback, (void*)&para0);
+  ch_io_it_cb_para0.grp_ptr = grp_ptr;  // update grp_ptr
+  ch_io_it_cb_para0.io_index = 0;       // sensor 0
+  gpio_isr_handler_add(CHIRP_INT_IO6, chirp_isr_callback,
+                       (void*)&ch_io_it_cb_para0);
 
   // TODO: other handler for sensor 1, 2, ...
   // gpio_isr_handler_add(CHIRP_IO_2, chirp_isr_callback,
@@ -1011,8 +1016,8 @@ void chbsp_io_set(ch_dev_t* dev_ptr)
  */
 void chbsp_io_callback_set(ch_io_int_callback_t callback_func_ptr)
 {
-  // used in chirp_isr_callback
-  io_int_callback_ptr = callback_func_ptr;
+  /* for single usage, comment this if not use */
+  // io_int_callback_ptr = callback_func_ptr;
 }
 
 /**
@@ -1060,8 +1065,17 @@ void chbsp_delay_ms(uint32_t ms)
  */
 int chbsp_i2c_init(void)
 {
-  i2c_master0_init();
-  i2c_master1_init();
+  static int is_init = 0;
+  if (!is_init)
+  {
+    i2c_master0_init();
+    i2c_master1_init();
+  }
+  else
+  {
+    ESP_LOGW("chbsp_i2c_init", "I2C buses were already initialized!");
+  }
+  is_init = 1;
   return 0;
 }
 
