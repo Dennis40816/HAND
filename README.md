@@ -1,5 +1,9 @@
 # HAND Firmware
 
+## Part test
+
+- [CH-101 on ESP32-S3-MINI](https://github.com/Dennis40816/HAND/tree/port_ch101/doc/part_test/port_ch101)
+
 ## TODO list
 
 ### chore
