@@ -1,0 +1,25 @@
+{
+    "name": "CH101",
+    "version": "1.31", 
+    "build": {
+      "flags": [
+        "-I board/config",
+
+        "-I board/HAL/inc",
+        "-I application/inc",
+        "-I drivers/chirpmicro/inc",
+        "-I ultrasound/inc",
+
+        "-I board/HAL/src",
+        "-I drivers/chirpmicro/src"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "TCA6408A",
+        "version": "*",
+        "path": "../TCA6408A"
+      }
+    ]
+}
+  

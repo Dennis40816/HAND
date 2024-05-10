@@ -1,0 +1,23 @@
+html
+*.DDF
+release.log
+*.tmp
+
+[Dd]ebug*/
+[Rr]elease*/
+
+build*
+
+#IAR Project specific folders
+_build/
+Exe/
+List/
+*.dep
+*.wsdt
+*.wspos
+*.jlink
+*.xcl
+*.crun
+*.dbgdt
+*.dni
+*.cspy.bat
