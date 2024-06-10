@@ -33,7 +33,7 @@
 - how to run pio test?
   
   ```
-  pio test -e esp32-s3-devkitm-1 -vvv
+  pio test -e hand_test -vvv
   ```
 
 ## Platform dependent code
