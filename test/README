@@ -1,11 +1,18 @@
+# HAND TEST
 
-This directory is intended for PlatformIO Test Runner and project tests.
+## `test_wifi`
 
-Unit Testing is a software testing method by which individual units of
-source code, sets of one or more MCU program modules together with associated
-control data, usage procedures, and operating procedures, are tested to
-determine whether they are fit for use. Unit testing finds problems early
-in the development cycle.
+- 執行 test_wifi 之前，需要先打開一個監聽 port `6020` 的 tcp server，測試資料夾中 `test/test_wifi` 已經有一個範例
+- 請使用另一個 terminal 先執行指令 `python test/test_wifi/tcp_server.py` 再開始測試
+- 可以在 platformio.ini 中 env `hand_test` 的 build_flags 設定以下三個參數，避免在測試過程中手動輸入參數
 
-More information about PlatformIO Unit Testing:
-- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+  ```ini
+    ;;; example: explicitly define test_wifi macros (if you don't want to manually set)
+    -DTEST_HAND_TCP_ECHO_SERVER_IP=\"192.168.1.17\"
+    -DTEST_HAND_WIFI_SSID=\"YourSSID\" ; must be 2.4G wifi
+    -DTEST_HAND_WIFI_PASSWORD=\"YourPassWord\"
+  ```
+
+## `hand_test_hook.py`
+
+- 這個 script 用來設定跟 test 有關的參數，允許使用者動態輸入諸如 `wifi SSID`, `PASSWORD`，如果使用者並未在 `platformio.ini` 中定義的情況下。
