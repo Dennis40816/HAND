@@ -8,8 +8,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -20,46 +20,102 @@
  * SOFTWARE.
  */
 
-#ifndef LIB_TCA6408A_H_
-#define LIB_TCA6408A_H_
+#ifndef LIB_TCA6408A_TCA6408A_H_
+#define LIB_TCA6408A_TCA6408A_H_
 
 #include <stdint.h>
 
-#include "driver/i2c.h"
-#include "esp_err.h"
-
-#define TCA6408A_DEFAULT_I2C_ADDRESS 0x20
-
-// TCA6408A Register addresses
-#define TCA6408A_INPUT_REG    0x00
-#define TCA6408A_OUTPUT_REG   0x01
-#define TCA6408A_POLARITY_REG 0x02
-#define TCA6408A_CONFIG_REG   0x03
-
-/* Config macros */
-#define TCA6408A_CONFIG_OUTPUT (0)
-#define TCA6408A_CONFIG_INPUT  (1)
-
 #ifdef ESP_PLATFORM
-typedef i2c_port_t i2c_port_type;
+#include "platform/espidf/tca6408a_espidf.h"
 #else
-typedef i2c_port_t int;
+#include "platform/dummy/tca6408a_dummy.h"
 #endif
 
-typedef struct {
-  i2c_port_type i2c_port;
-} tca6408a_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-esp_err_t tca6408a_write_register(uint8_t reg, uint8_t value,
-                                  const tca6408a_t* config);
-esp_err_t tca6408a_read_register(uint8_t reg, uint8_t* value,
-                                 const tca6408a_t* config);
-esp_err_t tca6408a_set_input(uint8_t value, const tca6408a_t* config);
-esp_err_t tca6408a_set_output(uint8_t value, const tca6408a_t* config);
-esp_err_t tca6408a_set_low(uint8_t mask, const tca6408a_t* config);
-esp_err_t tca6408a_set_high(uint8_t value, uint8_t mask, const tca6408a_t* config);
+/* tca6408a struct definition */
+typedef struct tca6408a_dev_t tca6408a_dev_t;
+typedef struct tca6408a_reg_info_t tca6408a_reg_info_t;
+typedef struct tca6408a_i2c_cmd_t tca6408a_i2c_cmd_t;  // for callback
 
-/* Debug */
-void tca6408a_test_read(const tca6408a_t* config);
+struct tca6408a_dev_t
+{
+  uint8_t address; /* should be 0x20 or 0x21 */
+  tca6408a_i2c_t i2c_bus;
+  /* TODO: add address_gpio_pin, change_address() */
+  /* TODO: add reset_gpio_pin */
+};
 
+struct tca6408a_reg_info_t
+{
+  uint8_t input_reg;
+  uint8_t output_reg;
+  uint8_t polarity_reg;
+  uint8_t config_reg;
+};
+
+/* register internal address enum */
+typedef enum
+{
+  TCA6408A_INPUT_REG,
+  TCA6408A_OUTPUT_REG,
+  TCA6408A_POLARITY_REG,
+  TCA6408A_CONFIG_REG,
+  // END OF REGISTERS
+  TCA6408A_NUM_REGS
+} tca6408a_reg;
+
+/* input output mode enum */
+typedef enum
+{
+  TCA6408A_IO_MODE_OUTPUT,
+  TCA6408A_IO_MODE_INPUT
+} tca6408a_io_mode;
+
+typedef enum
+{
+  TCA6408A_HIGH_LEVEL,
+  TCA6408A_LOW_LEVEL
+} tca6408a_pin_level;
+
+/* high level platform-agnostic functions declarations (recommended) */
+tca6408a_err_t tca6408a_set_pin_high(const tca6408a_dev_t* dev_ptr,
+                                     int nth_pin);
+tca6408a_err_t tca6408a_set_pin_low(const tca6408a_dev_t* dev_ptr, int nth_pin);
+tca6408a_err_t tca6408a_set_pin_output_mode(const tca6408a_dev_t* dev_ptr,
+                                            int nth_pin);
+tca6408a_err_t tca6408a_set_pin_input_mode(const tca6408a_dev_t* dev_ptr,
+                                           int nth_pin);
+tca6408a_err_t tca6408a_set_pin_polarity_invert(const tca6408a_dev_t* dev_ptr,
+                                                int nth_pin);
+tca6408a_err_t tca6408a_set_pin_polarity_normal(const tca6408a_dev_t* dev_ptr,
+                                                int nth_pin);
+
+/* high level platform-dependent functions declarations (recommended) */
+tca6408a_err_t tca6408a_reg_info_to_str(const tca6408a_reg_info_t* info,
+                                        char* str, size_t max_len);
+tca6408a_err_t tca6408a_read_all(const tca6408a_dev_t* dev_ptr,
+                                 tca6408a_reg_info_t* info);
+tca6408a_err_t tca6408a_reset(const tca6408a_dev_t* dev_ptr);  // TODO: not impl
+
+/* low level platform-dependent functions declarations */
+tca6408a_err_t tca6408a_set_bit_level(const tca6408a_dev_t* dev_ptr,
+                                      tca6408a_reg reg, int nth_bit,
+                                      tca6408a_pin_level level);
+tca6408a_err_t tca6408a_set_bits_level(const tca6408a_dev_t* dev_ptr,
+                                       tca6408a_reg reg, int mask,
+                                       tca6408a_pin_level level);
+tca6408a_err_t tca6408a_set_bits(const tca6408a_dev_t* dev_ptr,
+                                       tca6408a_reg reg, int mask,
+                                       int value);
+tca6408a_err_t tca6408a_write_register(const tca6408a_dev_t* dev_ptr,
+                                       tca6408a_reg reg, uint8_t new_val);
+tca6408a_err_t tca6408a_read_register(const tca6408a_dev_t* dev_ptr,
+                                      tca6408a_reg reg, uint8_t* ret_val);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

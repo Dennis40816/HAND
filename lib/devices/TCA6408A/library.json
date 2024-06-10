@@ -1,9 +1,21 @@
 {
     "name": "TCA6408A",
-    "version": "1.0",
+    "version": "1.0.1",
+    "description": "TCA6408A driver",
+    "keywords": ["TCA6408A", "driver", "I2C"],
+    "license": "MIT",
+    "authors": [
+      {
+        "name": "Dennis Liu",
+        "email": "dennis48161025@gmail.com"
+      }
+    ],
+    "frameworks": "espidf",
+    "platforms": [
+      "espressif32"
+    ],
     "build": {
-      "flags": [
-      ]
-    }
+      "extraScript": "extra_script.py"
+  }
 }
   
