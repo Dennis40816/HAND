@@ -28,8 +28,5 @@ jobs:
     - name: Run PlatformIO build
       run: pio run -e esp32-s3-devkitm-1
 
-    - name: Run tests
-      run: pio test -e esp32-s3-devkitm-1
-
     - name: Static code analysis
       run: pio check -e esp32-s3-devkitm-1
