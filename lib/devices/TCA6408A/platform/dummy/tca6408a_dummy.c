@@ -24,7 +24,7 @@
 #include "tca6408a_dummy.h"
 
 tca6408a_err_t tca6408a_reg_info_to_str(const tca6408a_reg_info_t* info,
-                                        char* str, size_t max_len)
+                                        char* str, uint32_t max_len)
 {
     return 0;
 }

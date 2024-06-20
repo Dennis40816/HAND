@@ -54,7 +54,7 @@
  */
 // clang-format on
 tca6408a_err_t tca6408a_reg_info_to_str(const tca6408a_reg_info_t* info,
-                                        char* str, size_t max_len)
+                                        char* str, uint32_t max_len)
 {
   // fixed template string length
   const char* template =

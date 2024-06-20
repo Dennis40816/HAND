@@ -25,10 +25,12 @@
 
 #include <stdint.h>
 
-#ifdef ESP_PLATFORM
+#ifdef LIB_USE_ESPIDF_PLATFORM
 #include "platform/espidf/tca6408a_espidf.h"
+#pragma message("LIB_USE_ESPIDF_PLATFORM defined")
 #else
 #include "platform/dummy/tca6408a_dummy.h"
+#pragma message("LIB_USE_DUMMY_PLATFORM defined")
 #endif
 
 #ifdef __cplusplus
@@ -95,7 +97,7 @@ tca6408a_err_t tca6408a_set_pin_polarity_normal(const tca6408a_dev_t* dev_ptr,
 
 /* high level platform-dependent functions declarations (recommended) */
 tca6408a_err_t tca6408a_reg_info_to_str(const tca6408a_reg_info_t* info,
-                                        char* str, size_t max_len);
+                                        char* str, uint32_t max_len);
 tca6408a_err_t tca6408a_read_all(const tca6408a_dev_t* dev_ptr,
                                  tca6408a_reg_info_t* info);
 tca6408a_err_t tca6408a_reset(const tca6408a_dev_t* dev_ptr);  // TODO: not impl
