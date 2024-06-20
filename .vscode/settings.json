@@ -1,5 +1,13 @@
 {
   // C/C++ format
   // "editor.formatOnSave": true,
-  "C_Cpp.clang_format_fallbackStyle": "{SortIncludes: false, BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 80, AlignConsecutiveMacros: true, BreakBeforeBraces: Allman}"
+  "C_Cpp.clang_format_fallbackStyle": "{SortIncludes: false, BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 80, AlignConsecutiveMacros: true, BreakBeforeBraces: Allman}",
+  "files.associations": {
+    "*.h": "c",
+    "*.template": "c",
+    "typeinfo": "c",
+    "array": "c",
+    "string": "c",
+    "string_view": "c"
+  }
 }
