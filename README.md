@@ -33,9 +33,14 @@
 - how to run pio test?
   
   ```
-  pio test -e hand_test -vvv
+  pio test -e hand_test -vv
   ```
 
 ## Platform dependent code
+
+- When using python, please choose the correct platform io python env:
+
+  - e.g., `C:\Users\USER\.platformio\penv\Scripts\python.exe`. You need to find your own path.
+  - use pip to install `termcolor`
 
 - Put an `extra_script.py` in lib folder to change `pio's src_filter`
