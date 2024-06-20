@@ -9,3 +9,6 @@ __pycache__/
 
 # platform io - espidf
 sdkconfig.*
+
+# log
+*.log

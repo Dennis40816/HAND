@@ -1,9 +1,5 @@
 import signal
-import time
 import sys
-from hand_test_wifi import (
-    set_test_environment,
-)  # Import the function from the new script
 
 # Global variable to track if script is interrupted
 interrupted = False
@@ -34,16 +30,13 @@ print(" ")
 # Start section with green color
 print_colored("############################################################", "32")
 print(" ")
-print_colored("hand_test_hook running...", "32")
+print_colored("hand_hook running...", "32")
 print(" ")
 print(" Global ")
 global_env = DefaultEnvironment()
 for item in global_env.get("CPPDEFINES", []):
     print(item)
-
-print(global_env.Dump())
-time.sleep(5)
-
+    
 print(" ")
 print(" Project ")
 print(projenv)
@@ -56,11 +49,6 @@ print(" ENV ")
 for item in env.get("CPPDEFINES", []):
     print(item)
 print(" ")
-
-print_colored("Obtaining current build machine local IP address...", "32")
-
-# Call the environment setup function
-set_test_environment(projenv)
 
 # End section with green color
 print(" ")

@@ -37,7 +37,7 @@
 #include "platform/dummy/bos1901_dummy.h"
 #pragma message("LIB_USE_DUMMY_PLATFORM defined")
 #else
-#pragma error("no platform defined")
+#error "No platform defined. Please define one of LIB_USE_ESPIDF_PLATFORM, LIB_USE_STM32_PLATFORM, or LIB_USE_DUMMY_PLATFORM."
 #endif
 
 #ifdef __cplusplus
