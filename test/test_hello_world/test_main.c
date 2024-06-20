@@ -11,7 +11,7 @@ static const char *LOG_TAG = "test_hello_world";
 
 #define LOG_BUFFER_SIZE 1024
 static char log_buffer[LOG_BUFFER_SIZE];
-static size_t log_buffer_index = 0;
+static uint32_t log_buffer_index = 0;
 
 static int custom_log_vprintf(const char *fmt, va_list args)
 {

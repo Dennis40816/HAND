@@ -1,5 +1,10 @@
 # HAND TEST
 
+## How to run the test
+
+- 在 platformio.ini 裡面透過 test_filter 指定目標
+- 接著使用開啟 `platform io CLI` 執行 `pio test -e hand_test -vv`
+
 ## `test_wifi`
 
 - 執行 test_wifi 之前，需要先打開一個監聽 port `6020` 的 tcp server，測試資料夾中 `test/test_wifi` 已經有一個範例
