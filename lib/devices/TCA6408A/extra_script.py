@@ -1,5 +1,5 @@
 # Import the PlatformIO environment modules
-Import("env", "projenv")
+Import("env")
 
 # Import necessary Python modules
 import time
@@ -21,25 +21,7 @@ def display_log_level(env):
             time.sleep(1)
             break
 
-def check_duplicate_define(env, define):
-    """
-    Check for duplicate macro definitions in the CPPDEFINES.
-    
-    Args:
-        env (Environment): The PlatformIO environment object.
-        define (str): The macro to check for duplication.
-        
-    Returns:
-        bool: True if a duplicate is found, otherwise False.
-    """
-    for item in env.get("CPPDEFINES", []):
-        if isinstance(item, tuple) and item[0] == define:
-            return True
-        elif item == define:
-            return True
-    return False
-
-def configure_src_filter(env, proj_env, platform):
+def configure_src_filter(env, platform):
     """
     Configure the source filter based on the provided platform.
     
@@ -51,24 +33,9 @@ def configure_src_filter(env, proj_env, platform):
     if platform not in SUPPORTED_PLATFORMS:
         warning_message = f"Warning: Unsupported platform: {platform}. Falling back to 'platform/dummy'."
         print(colored(warning_message, "red"))
-        time.sleep(5)
+        time.sleep(3)
         platform = "dummy"
-
-    platform_upper = platform.upper()
-    cpp_define = f"LIB_USE_{platform_upper}_PLATFORM"
-
-    # Check for duplicate definitions before adding
-    global_env = DefaultEnvironment()
-    if check_duplicate_define(global_env, cpp_define):
-        print(colored(f"Warning: Duplicate macro definition detected: {cpp_define}. Ignore!", "yellow"))
-    else:
-        global_env.Prepend(CPPDEFINES=[cpp_define])
-
-    if check_duplicate_define(proj_env, cpp_define):
-        print(colored(f"Warning: Duplicate macro definition detected in project environment: {cpp_define}. Ignore!", "yellow"))
-    else:
-        proj_env.Prepend(CPPDEFINES=[cpp_define])
-
+        
     # Define source filters
     exclude_filter = "-<platform/>"
     exclude_example = "-<example/>"
@@ -87,10 +54,10 @@ for item in env.get("CPPDEFINES", []):
         break
 
 # Display log level information
-display_log_level(projenv)
+display_log_level(env)
 
 # Configure the source filter if the platform is defined
 if lib_platform:
-    configure_src_filter(env, projenv, lib_platform)
+    configure_src_filter(env, lib_platform)
 else:
     print("Warning: LIB_PLATFORM is not defined in build flags.")

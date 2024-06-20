@@ -33,11 +33,9 @@
 #elif defined LIB_USE_STM32_PLATFORM
 #include "platform/stm32/bos1901_stm32.h"
 #pragma message("LIB_USE_STM32_PLATFORM defined")
-#elif defined LIB_USE_DUMMY_PLATFORM
+#else
 #include "platform/dummy/bos1901_dummy.h"
 #pragma message("LIB_USE_DUMMY_PLATFORM defined")
-#else
-#error "No platform defined. Please define one of LIB_USE_ESPIDF_PLATFORM, LIB_USE_STM32_PLATFORM, or LIB_USE_DUMMY_PLATFORM."
 #endif
 
 #ifdef __cplusplus
