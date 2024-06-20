@@ -1,7 +1,5 @@
-#ifndef LIB_CH101_BOARD_HAL_CHBSP_ESPRESSIF_ESP32S3_H_
-#define LIB_CH101_BOARD_HAL_CHBSP_ESPRESSIF_ESP32S3_H_
-
-// clang-format off
+#ifndef LIB_CH101_PLATFORM_ESPIDF_CHBSP_ESPIDF_H_
+#define LIB_CH101_PLATFORM_ESPIDF_CHBSP_ESPIDF_H_
 
 /* CHx01 includes */
 #include "soniclib.h"
@@ -15,8 +13,6 @@
 
 /* TCA6408A include */
 #include "tca6408a.h"
-
-// clang-format on
 
 /**
  * Pin config for HAND_BUILD_TARGET_PORTING_CH101

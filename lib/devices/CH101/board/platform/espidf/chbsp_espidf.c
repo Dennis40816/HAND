@@ -19,12 +19,10 @@
  or by mail at 2560 Ninth Street, Suite 220, Berkeley, CA 94710.
  */
 
-// clang-format off
-
 /* header with board-specific defines, e.g., "chirp_smartsonic.h" for smartsonic
  * board */
 #include "conf_board.h"
-#include "chbsp_espressif_esp32-s3.h"
+#include "chbsp_espidf.h"
 
 /* esp-idf header */
 #include "esp_timer.h"
@@ -36,8 +34,6 @@
 /* chx01 lib */
 #include "soniclib.h"
 #include "chirp_bsp.h"
-
-// clang-format on
 
 /* Define GPIO level macros */
 #define GPIO_LEVEL_LOW  (0)
@@ -1579,9 +1575,7 @@ void chbsp_periodic_timer_handler(void* __attribute__((unused)) para)
  * associated with the I2C, external GPIO pins, and the periodic timer (if used)
  * are able to wake up the device.
  */
-void chbsp_proc_sleep(void)
-{ /* We don't need this for demo */
-}
+void chbsp_proc_sleep(void) { /* We don't need this for demo */ }
 
 /*!
  * \brief Turn on an LED on the board.
