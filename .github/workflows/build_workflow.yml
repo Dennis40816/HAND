@@ -26,7 +26,7 @@ jobs:
         pip install --upgrade setuptools
 
     - name: Run PlatformIO build
-      run: pio run -e esp32-s3-devkitm-1
+      run: pio run -e hand_firmware
 
     - name: Static code analysis
-      run: pio check -e esp32-s3-devkitm-1
+      run: pio check -e hand_firmware
