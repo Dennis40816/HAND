@@ -4,6 +4,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "unity.h"
 #include "bos1901.h"
 
 // 定义 SPI 引脚
@@ -162,10 +163,18 @@ void test_bos1901_device()
            expected_value);
   ESP_LOGI(TAG, "Read_value_3: 0x%04X, expected: 0x%04X", read_value_3,
            expected_value);
+
+  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_0);
+  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_1);
+  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_2);
+  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_3);
 }
 
 void app_main(void)
 {
+  // Initialize Unity
+  UNITY_BEGIN();
+
   // Wait for devices to stabilize
   vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -173,7 +182,7 @@ void app_main(void)
   init_spi();
 
   // Run the test
-  test_bos1901_device();
+  RUN_TEST(test_bos1901_device);
 
   // Clean up resources
   bos1901_device_deinit(bos1901_device_0);
@@ -182,4 +191,7 @@ void app_main(void)
   bos1901_device_deinit(bos1901_device_3);
 
   spi_bus_free(HSPI_HOST);
+
+  // End Unity
+  UNITY_END();
 }
