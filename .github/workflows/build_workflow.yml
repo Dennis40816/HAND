@@ -26,8 +26,12 @@ jobs:
         pip install --upgrade setuptools
         pip install termcolor
 
-    - name: Run PlatformIO build
-      run: pio run -e hand_firmware
+    - name: Run PlatformIO test build
+      run:
+        pio test -e hand_firmware -vv -f "*" --without-uploading --without-testing
 
     - name: Static code analysis
       run: pio check -e hand_firmware
+
+    - name: Run PlatformIO build
+      run: pio run -e hand_firmware
