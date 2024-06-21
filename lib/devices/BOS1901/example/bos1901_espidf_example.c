@@ -4,10 +4,9 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_err.h"
-#include "unity.h"
 #include "bos1901.h"
 
-// 定义 SPI 引脚
+// SPI config
 #define PIN_NUM_MISO 11
 #define PIN_NUM_MOSI 13
 #define PIN_NUM_CLK  12
@@ -133,27 +132,26 @@ void test_bos1901_device()
   set_other_cs_pins_high();
 
   // Send reset command
-  uint16_t reset_command = 0x5100;  // Reset command for BOS1901
-  bos1901_device_read_write_reg(bos1901_device_0, reset_command);
-  bos1901_device_read_write_reg(bos1901_device_1, reset_command);
-  bos1901_device_read_write_reg(bos1901_device_2, reset_command);
-  bos1901_device_read_write_reg(bos1901_device_3, reset_command);
+  bos1901_device_reset(bos1901_device_0);
+  bos1901_device_reset(bos1901_device_1);
+  bos1901_device_reset(bos1901_device_2);
+  bos1901_device_reset(bos1901_device_3);
 
   // Wait 50 ms
   vTaskDelay(pdMS_TO_TICKS(50));
 
   // Read
-  uint16_t dummy = 0xC000;
   uint16_t expected_value = 0x246A;
 
-  uint16_t read_value_0 =
-      bos1901_device_read_write_reg(bos1901_device_0, dummy);
-  uint16_t read_value_1 =
-      bos1901_device_read_write_reg(bos1901_device_1, dummy);
-  uint16_t read_value_2 =
-      bos1901_device_read_write_reg(bos1901_device_2, dummy);
-  uint16_t read_value_3 =
-      bos1901_device_read_write_reg(bos1901_device_3, dummy);
+  uint16_t read_value_0;
+  uint16_t read_value_1;
+  uint16_t read_value_2;
+  uint16_t read_value_3;
+
+  bos1901_device_read_reg(bos1901_device_0, BOS1901_REG_ID, &read_value_0);
+  bos1901_device_read_reg(bos1901_device_1, BOS1901_REG_ID, &read_value_1);
+  bos1901_device_read_reg(bos1901_device_2, BOS1901_REG_ID, &read_value_2);
+  bos1901_device_read_reg(bos1901_device_3, BOS1901_REG_ID, &read_value_3);
 
   // Assert register value is 0x246A
   ESP_LOGI(TAG, "Read_value_0: 0x%04X, expected: 0x%04X", read_value_0,
@@ -164,18 +162,10 @@ void test_bos1901_device()
            expected_value);
   ESP_LOGI(TAG, "Read_value_3: 0x%04X, expected: 0x%04X", read_value_3,
            expected_value);
-
-  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_0);
-  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_1);
-  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_2);
-  TEST_ASSERT_EQUAL_HEX16(expected_value, read_value_3);
 }
 
 void app_main(void)
 {
-  // Initialize Unity
-  UNITY_BEGIN();
-
   // Wait for devices to stabilize
   vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -183,7 +173,7 @@ void app_main(void)
   init_spi();
 
   // Run the test
-  RUN_TEST(test_bos1901_device);
+  test_bos1901_device();
 
   // Clean up resources
   bos1901_device_deinit(bos1901_device_0);
@@ -192,7 +182,4 @@ void app_main(void)
   bos1901_device_deinit(bos1901_device_3);
 
   spi_bus_free(HSPI_HOST);
-
-  // End Unity
-  UNITY_END();
 }

@@ -334,3 +334,148 @@ typedef struct bos1901_private_status_t
   bool output_enable;  // oe
   bool sense_enable;   // sense
 } bos1901_private_status_t;
+
+/* TODO: v1, create something like
+
+// Define struct for each register's bit fields
+
+// Address 0x0: REFERENCE
+typedef struct {
+    unsigned int FIFO : 12;
+    unsigned int : 4; // Reserved
+} ReferenceRegister;
+
+// Address 0x1: ION_BL
+typedef struct {
+    unsigned int FSWMAX : 2;
+    unsigned int SB : 2;
+    unsigned int I_ON_SCALE : 8;
+    unsigned int : 4; // Reserved
+} IonBlRegister;
+
+// Address 0x2: DEADTIME
+typedef struct {
+    unsigned int DHS : 7;
+    unsigned int : 9; // Reserved
+} DeadtimeRegister;
+
+// Address 0x3: KP
+typedef struct {
+    unsigned int KP : 11;
+    unsigned int SQ : 1;
+    unsigned int : 4; // Reserved
+} KpRegister;
+
+// Address 0x4: KPA_KI
+typedef struct {
+    unsigned int KPA : 8;
+    unsigned int KIBASE : 4;
+    unsigned int : 4; // Reserved
+} KpaKiRegister;
+
+// Address 0x5: CONFIG
+typedef struct {
+    unsigned int BC : 5;
+    unsigned int LOCK : 1;
+    unsigned int RST : 1;
+    unsigned int OE : 1;
+    unsigned int DS : 1;
+    unsigned int PLAY : 3;
+    unsigned int : 4; // Reserved
+} ConfigRegister;
+
+// Address 0x6: PARCAP
+typedef struct {
+    unsigned int UPI : 1;
+    unsigned int LMI : 1;
+    unsigned int CP5 : 1;
+    unsigned int CAL : 1;
+    unsigned int PARCAP : 4;
+    unsigned int : 8; // Reserved
+} ParcapRegister;
+
+// Address 0x7: SUP_RISE
+typedef struct {
+    unsigned int TI_RISE : 6;
+    unsigned int : 2; // Reserved
+    unsigned int VDD : 5;
+    unsigned int SENSE : 3;
+} SupRiseRegister;
+
+// Address 0x8: DAC
+typedef struct {
+    unsigned int DAC_HS : 6;
+    unsigned int : 2; // Reserved
+    unsigned int DAC_LS : 6;
+    unsigned int : 2; // Reserved
+} DacRegister;
+
+// Address 0xC: IC_STATUS
+typedef struct {
+    unsigned int FIFO_SPACE : 6;
+    unsigned int EMPTY : 1;
+    unsigned int FULL : 1;
+    unsigned int OVT : 1;
+    unsigned int OVV : 1;
+    unsigned int STATE : 2;
+    unsigned int : 4; // Reserved
+} IcStatusRegister;
+
+// Address 0xD: SENSE
+typedef struct {
+    unsigned int VFEEDBACK : 10;
+    unsigned int STATE : 2;
+    unsigned int : 4; // Reserved
+} SenseRegister;
+
+// Address 0xE: TRIM
+typedef struct {
+    unsigned int TRIM_REG : 3;
+    unsigned int : 1; // Reserved
+    unsigned int TRIM_OSC : 6;
+    unsigned int SDOBP : 2;
+    unsigned int TRIMRW : 2;
+    unsigned int : 2; // Reserved
+} TrimRegister;
+
+// Define union for all registers
+typedef union {
+    uint16_t raw[15]; // Raw data for all registers
+    struct {
+        ReferenceRegister reference;   // 0x0
+        IonBlRegister ion_bl;          // 0x1
+        DeadtimeRegister deadtime;     // 0x2
+        KpRegister kp;                 // 0x3
+        KpaKiRegister kpa_ki;          // 0x4
+        ConfigRegister config;         // 0x5
+        ParcapRegister parcap;         // 0x6
+        SupRiseRegister sup_rise;      // 0x7
+        DacRegister dac;               // 0x8
+        uint16_t reserved_0x9;         // 0x9 - Reserved
+        uint16_t reserved_0xA;         // 0xA - Reserved
+        uint16_t reserved_0xB;         // 0xB - Reserved
+        IcStatusRegister ic_status;    // 0xC
+        SenseRegister sense;           // 0xD
+        TrimRegister trim;             // 0xE
+    } fields;
+} Bos1901Registers;
+
+int main() {
+    // Example usage
+    Bos1901Registers registers = {0};
+
+    // Set some fields
+    registers.fields.reference.FIFO = 0xABC;
+    registers.fields.ion_bl.FSWMAX = 3;
+    registers.fields.ic_status.FULL = 1;
+
+    // Print some values
+    printf("FIFO: 0x%03X\n", registers.fields.reference.FIFO);
+    printf("FSWMAX: %u\n", registers.fields.ion_bl.FSWMAX);
+    printf("IC_STATUS FULL: %u\n", registers.fields.ic_status.FULL);
+
+    return 0;
+}
+
+
+ */

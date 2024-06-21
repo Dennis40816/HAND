@@ -47,28 +47,28 @@ void init_spi()
   ESP_LOGI(TAG, "spi bus initialize ret value is: %d. should be 0", ret);
 
   spi_device_interface_config_t devcfg0 = {
-      .clock_speed_hz = 10 * 1000 * 1000,
+      .clock_speed_hz = 35 * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS0,
       .queue_size = 5,
   };
 
   spi_device_interface_config_t devcfg1 = {
-      .clock_speed_hz = 10 * 1000 * 1000,
+      .clock_speed_hz = 35 * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS1,
       .queue_size = 5,
   };
 
   spi_device_interface_config_t devcfg2 = {
-      .clock_speed_hz = 10 * 1000 * 1000,
+      .clock_speed_hz = 35 * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS2,
       .queue_size = 5,
   };
 
   spi_device_interface_config_t devcfg3 = {
-      .clock_speed_hz = 10 * 1000 * 1000,
+      .clock_speed_hz = 35 * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS3,
       .queue_size = 5,
@@ -139,7 +139,7 @@ void test_bos1901_device()
   bos1901_device_reset(bos1901_device_3);
 
   // Wait 50 ms
-  vTaskDelay(pdMS_TO_TICKS(50));
+  vTaskDelay(pdMS_TO_TICKS(1000));
 
   // Read
   uint16_t expected_value = 0x246A;
@@ -152,10 +152,10 @@ void test_bos1901_device()
   bos1901_device_read_reg(bos1901_device_0, BOS1901_REG_ID, &read_value_0);
   bos1901_device_read_reg(bos1901_device_1, BOS1901_REG_ID, &read_value_1);
   bos1901_device_read_reg(bos1901_device_2, BOS1901_REG_ID, &read_value_2);
-  bos1901_device_read_reg(bos1901_device_3, BOS1901_REG_IC_STATUS, &read_value_3);
+  bos1901_device_read_reg(bos1901_device_3, BOS1901_REG_ID, &read_value_3);
 
   // Assert register value is 0x246A
-  ESP_LOGI(TAG, "Read_value_0: 0x%04X, expected: 0x%04X", read_value_0,
+  ESP_LOGI(TAG, "Read_value_0: 0x%04X, expected: 0x%04X", read_value_0, 
            expected_value);
   ESP_LOGI(TAG, "Read_value_1: 0x%04X, expected: 0x%04X", read_value_1,
            expected_value);
@@ -171,7 +171,9 @@ void test_bos1901_device()
 }
 
 void app_main(void)
-{
+{ 
+  // esp_log_level_set("*", ESP_LOG_VERBOSE);
+
   // Initialize Unity
   UNITY_BEGIN();
 

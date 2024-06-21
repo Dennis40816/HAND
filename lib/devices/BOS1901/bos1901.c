@@ -343,9 +343,20 @@ bos1901_err_t bos1901_device_read_reg(bos1901_dev_t *dev,
 
   BOS_LOGV(TAG, "Send cmd in `bos1901_device_read_reg`: 0x%04X", cmd);
 
-  /* write command word to bos1901 */
-  bos1901_err_t err =
-      bos1901_device_read_write(dev, data_tx, data_rx, rw_length);
+  /* This function writes a command word to the BOS1901 device. Note that this
+   * method cannot be used for reading data because BOS1901 requires additional
+   * time to correctly push data to the SDO pin. This method is too fast for
+   * reading accurate data, which is why adjustments were necessary.
+   */
+  // bos1901_err_t err = bos1901_device_read_write(dev, data_tx, data_rx,
+  // rw_length);
+
+  /* alternative, around 170 us in debug mode @ 35M */
+
+  bos1901_device_read_write_reg(dev, cmd);
+  data_rx[1] = bos1901_device_read_write_reg(dev, dummy);
+
+  bos1901_err_t err = BOS1901_OK;
 
   if (err == BOS1901_OK)
   {
@@ -390,7 +401,6 @@ bos1901_dev_config_t bos1901_get_device_default_config()
   return s;
 }
 
-/* TODO: v1, delete this api, also modify example */
 uint16_t bos1901_device_read_write_reg(bos1901_dev_t *dev, uint16_t data_tx)
 {
   uint16_t data_rx = 0;
@@ -448,8 +458,7 @@ bos1901_err_t bos1901_device_output_enable(bos1901_dev_t *dev,
   /* assign oe bit */
   config_value |= (new_status << oe_shift);
 
-  ret =
-      bos1901_device_write_reg(dev, BOS1901_REG_CONFIG, config_value);
+  ret = bos1901_device_write_reg(dev, BOS1901_REG_CONFIG, config_value);
 
   if (ret != BOS1901_OK)
   {
@@ -532,8 +541,7 @@ bos1901_err_t bos1901_device_sense_enable(bos1901_dev_t *dev,
   /* assign oe bit */
   sup_rise_value |= (new_status << sense_shift);
 
-  ret =
-      bos1901_device_write_reg(dev, BOS1901_REG_SUP_RISE, sup_rise_value);
+  ret = bos1901_device_write_reg(dev, BOS1901_REG_SUP_RISE, sup_rise_value);
 
   if (ret != BOS1901_OK)
   {

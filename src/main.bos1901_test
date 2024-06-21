@@ -6,7 +6,7 @@
 #include "esp_err.h"
 #include "bos1901.h"
 
-// 定义 SPI 引脚
+// SPI config
 #define PIN_NUM_MISO 11
 #define PIN_NUM_MOSI 13
 #define PIN_NUM_CLK  12
@@ -151,7 +151,7 @@ void test_bos1901_device()
   bos1901_device_read_reg(bos1901_device_0, BOS1901_REG_ID, &read_value_0);
   bos1901_device_read_reg(bos1901_device_1, BOS1901_REG_ID, &read_value_1);
   bos1901_device_read_reg(bos1901_device_2, BOS1901_REG_ID, &read_value_2);
-  bos1901_device_read_reg(bos1901_device_3, BOS1901_REG_IC_STATUS, &read_value_3);
+  bos1901_device_read_reg(bos1901_device_3, BOS1901_REG_ID, &read_value_3);
 
   // Assert register value is 0x246A
   ESP_LOGI(TAG, "Read_value_0: 0x%04X, expected: 0x%04X", read_value_0,
