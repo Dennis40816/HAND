@@ -41,8 +41,9 @@ global_env = DefaultEnvironment()
 for item in global_env.get("CPPDEFINES", []):
     print(item)
 
-print(global_env.Dump())
-time.sleep(5)
+## debug
+# print(global_env.Dump())
+# time.sleep(5)
 
 print(" ")
 print(" Project ")
