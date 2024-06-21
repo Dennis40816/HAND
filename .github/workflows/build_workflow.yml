@@ -28,7 +28,7 @@ jobs:
 
     - name: Run PlatformIO test build
       run:
-        pio test -e hand_firmware -vv -f "*" --without-uploading --without-testing
+        pio test -e hand_test -vv -f "*" --without-uploading --without-testing
 
     - name: Static code analysis
       run: pio check -e hand_firmware
