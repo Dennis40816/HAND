@@ -1,6 +1,6 @@
 {
   "name": "CH101",
-  "version": "1.0.1",
+  "version": "1.32.1",
   "build": {
     "flags":[
       "-I board/config",
