@@ -180,8 +180,8 @@ void app_main(void)
 
   ESP_LOGI("app_main", "    Hello Chirp! - Chirp SonicLib Example Application");
   ESP_LOGI("app_main", "    Compile time:  %s %s", __DATE__, __TIME__);
-  ESP_LOGI("app_main", "    Version: %u.%u.%u", APP_VERSION_MAJOR,
-           APP_VERSION_MINOR, APP_VERSION_REV);
+  ESP_LOGI("app_main", "    Version: %u.%u.%u", CHX01_APP_VERSION_MAJOR,
+           CHX01_APP_VERSION_MINOR, CHX01_APP_VERSION_REV);
   ESP_LOGI("app_main", "    SonicLib version: %u.%u.%u\n", SONICLIB_VER_MAJOR,
            SONICLIB_VER_MINOR, SONICLIB_VER_REV);
 

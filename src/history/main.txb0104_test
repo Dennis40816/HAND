@@ -1,0 +1,90 @@
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+  void app_main(void);
+#ifdef __cplusplus
+}
+#endif
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
+#include "esp_err.h"
+#include "bos1901.h"
+
+// GPIO config
+#define PIN_TXB0104_B1 33
+#define PIN_TXB0104_B2 47
+#define PIN_TXB0104_B3 26
+#define PIN_TXB0104_B4 21
+
+/* result: should pass */
+
+static const char* TAG = "HAND_TXB0104_TEST";
+
+void init_gpio()
+{
+  gpio_config_t io_conf;
+  io_conf.intr_type = GPIO_INTR_DISABLE;
+  io_conf.mode = GPIO_MODE_OUTPUT;
+  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  io_conf.pin_bit_mask = ((1ULL << PIN_TXB0104_B1) | (1ULL << PIN_TXB0104_B2) |
+                          (1ULL << PIN_TXB0104_B3) | (1ULL << PIN_TXB0104_B4));
+  esp_err_t ret = gpio_config(&io_conf);
+
+  ESP_LOGI(TAG, "GPIO config result is: %s", ret == ESP_OK ? "OK" : "FAILED");
+}
+
+void test_txb0104(void* para)
+{
+  int pins[] = {PIN_TXB0104_B1, PIN_TXB0104_B2, PIN_TXB0104_B3, PIN_TXB0104_B4};
+  int pin_count = sizeof(pins) / sizeof(pins[0]);
+  const char* pin_name[4] = {"TXB0104_1", "TXB0104_2", "TXB0104_3",
+                             "TXB0104_4"};
+
+  while (1)
+  {
+    // Set pins high in sequence
+    for (int i = 0; i < pin_count; i++)
+    {
+      gpio_set_level(pins[i], 1);
+      ESP_LOGI(TAG, "Pin %s set to HIGH", pin_name[i]);
+      vTaskDelay(pdMS_TO_TICKS(500));  // Wait for 2 seconds
+    }
+
+    // Set pins low in sequence
+    for (int i = 0; i < pin_count; i++)
+    {
+      gpio_set_level(pins[i], 0);
+      ESP_LOGI(TAG, "Pin %s set to LOW", pin_name[i]);
+      vTaskDelay(pdMS_TO_TICKS(500));  // Wait for 2 seconds
+    }
+  }
+}
+
+void app_main(void)
+{
+  // Wait for devices to stabilize
+  vTaskDelay(pdMS_TO_TICKS(1000));
+
+  // Initialize GPIO
+  init_gpio();
+
+  //   gpio_set_level(PIN_TXB0104_B3, 0);
+  //   vTaskDelay(pdMS_TO_TICKS(5000));
+  //   ESP_LOGI(TAG, "Pin set to LOW");
+  //   vTaskDelay(pdMS_TO_TICKS(5000));
+
+  //   gpio_set_level(PIN_TXB0104_B3, 1);
+  //   ESP_LOGI(TAG, "Pin set to HIGH");
+  //   vTaskDelay(pdMS_TO_TICKS(5000));
+
+  //   gpio_set_level(PIN_TXB0104_B3, 0);
+  //   ESP_LOGI(TAG, "Pin set to LOW");
+
+  // Start the test task
+  xTaskCreate(test_txb0104, "test_txb0104", 2048, NULL, 5, NULL);
+}
