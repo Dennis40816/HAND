@@ -22,7 +22,7 @@
 /* header with board-specific defines, e.g., "chirp_smartsonic.h" for smartsonic
  * board */
 #include "conf_board.h"
-#include "chbsp_espidf.h"
+#include "chbsp_hand_espidf.h"
 
 /* esp-idf header */
 #include "esp_timer.h"
