@@ -47,7 +47,6 @@ for item in global_env.get("CPPDEFINES", []):
 
 print(" ")
 print(" Project ")
-print(projenv)
 for item in projenv.get("CPPDEFINES", []):
     print(item)
 print(" ")
