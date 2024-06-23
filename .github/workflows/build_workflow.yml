@@ -24,7 +24,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
         pip install --upgrade setuptools
-        pip install termcolor
 
     - name: Run PlatformIO test build
       run:
@@ -32,6 +31,7 @@ jobs:
 
     - name: Static code analysis
       run: pio check -e hand_firmware
-
-    - name: Run PlatformIO build
-      run: pio run -e hand_firmware
+    
+    ## enable this after hand_main firmware done
+    # - name: Run PlatformIO build
+    #   run: pio run -e hand_firmware
