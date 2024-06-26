@@ -78,8 +78,8 @@ typedef enum
 
 typedef enum
 {
-  TCA6408A_HIGH_LEVEL,
-  TCA6408A_LOW_LEVEL
+  TCA6408A_LOW_LEVEL,
+  TCA6408A_HIGH_LEVEL
 } tca6408a_pin_level;
 
 /* high level platform-agnostic functions declarations (recommended) */
