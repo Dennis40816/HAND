@@ -2,23 +2,5 @@
 
 - This lib is modified from [TDK SmartSonic HelloChirp](https://invensense.tdk.com/developers/wp-content/uploads/sites/2/2021/08/SmartSonic_HelloChirp_Example_v1_31_0.zip) by Dennis Liu.
 
-## application
-
-### `app_config.h`
-
-The `app_config.h` file is used for configuring and controlling the InvenSense CH101 and CH201 ultrasonic sensors in an application. It includes settings for:
-
-- **Sensor Firmware Selection**: Choose the appropriate sensor firmware for the CH101 or CH201 models.
-- **Sensor Configuration**: Define operational modes, maximum detection range, static target rejection, and receive pre-triggering settings.
-- **Application Timing**: Specify the measurement interval for sensor data collection.
-- **Data Handling**: Configure how amplitude and I/Q data are read and output, including options for blocking and non-blocking read modes.
-
-These configurations allow for flexible adjustment to meet various measurement and data processing needs.
-
-### 
-
-## board
-
-## drivers
-
-## ultrasound
+# Chirp SmartSonic Platform
+![smartsonic_platform_board](./doc/pic/smartsonic_platform_board.png)

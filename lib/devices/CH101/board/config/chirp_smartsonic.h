@@ -1,5 +1,5 @@
 /*
-Copyright © 2016-2019, Chirp Microsystems.  All rights reserved.
+Copyright ï¿½ 2016-2019, Chirp Microsystems.  All rights reserved.
 All rights reserved.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
@@ -40,14 +40,7 @@ You can contact the authors of this program by email at support@chirpmicro.com
 
 /* I2C Address assignments for each possible device */
 #define CHIRP_I2C_ADDRS		{45, 43, 44, 42 }
-#define CHIRP_I2C_BUSES		{ 0,  0,  1,  1 }
-
-/* IRQ assignments */
-#define TWI1_IRQn           FLEXCOM1_IRQn
-#define TWI3_IRQn           FLEXCOM3_IRQn
-
-/* Processor sleep mode */
-#define	PROC_SLEEP_MODE		SAM_PM_SMODE_SLEEP_WFI		/* wait for interrupt */
+#define CHIRP_I2C_BUSES		{ 1,  1,  1,  1 }
 
 /* Structure to track non-blocking I2C transaction data */
 typedef struct {

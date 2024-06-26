@@ -19,57 +19,57 @@
  or by mail at 2560 Ninth Street, Suite 220, Berkeley, CA 94710.
  */
 
-/* header with board-specific defines, e.g., "chirp_smartsonic.h" for smartsonic
- * board */
-#include "conf_board.h"
-#include "chbsp_hand_espidf.h"
+/* header with board-specific defines */
+#include "conf_hand_espidf_board.h"
+#include "chirp_board_config.h"
+
+/* chirp related lib */
+#include "chirp_smartsonic.h"  // header with board-specific defines
+#include "soniclib.h"          // Chirp SonicLib API definitions
+#include "chirp_bsp.h"
 
 /* esp-idf header */
 #include "esp_timer.h"
+#include "esp_log.h"
 #include "rom/ets_sys.h"
-
-/* FREERTOS */
 #include "freertos/FreeRTOS.h"
 
-/* chx01 lib */
-#include "soniclib.h"
-#include "chirp_bsp.h"
-
-/* Define GPIO level macros */
-#define GPIO_LEVEL_LOW  (0)
-#define GPIO_LEVEL_HIGH (1)
+/* other lib */
+#include "tca6408a.h"
 
 static uint8_t chirp_i2c_addrs[] = CHIRP_I2C_ADDRS;
 static uint8_t chirp_i2c_buses[] = CHIRP_I2C_BUSES;
 
 /*
  * Here you set the pin masks for each of the prog pins
- * TODO: update related gpio
  */
 uint32_t chirp_pin_prog[] = CHIRP_PIN_PROG;
 uint32_t chirp_pin_io[] = CHIRP_PIN_IO;
-// uint32_t chirp_pin_io_irq[] = CHIRP_PIN_IO_IRQ;
 uint32_t chirp_led_pins[] = CHIRP_PIN_LED;
 
 /* Chirp sensor group pointer */
 ch_group_t* sensor_group_ptr;
 
-/* Parameter storage for sensor 0 */
-ch_io_int_callback_parameter_t ch_io_it_cb_para0 = {.grp_ptr = NULL,
+/* Parameter storage for sensors*/
+// io index starts from 0
+ch_io_int_callback_parameter_t ch_io_it_cb_para1 = {.grp_ptr = NULL,
                                                     .io_index = 0};
+ch_io_int_callback_parameter_t ch_io_it_cb_para2 = {.grp_ptr = NULL,
+                                                    .io_index = 1};
+ch_io_int_callback_parameter_t ch_io_it_cb_para3 = {.grp_ptr = NULL,
+                                                    .io_index = 2};
+ch_io_int_callback_parameter_t ch_io_it_cb_para4 = {.grp_ptr = NULL,
+                                                    .io_index = 3};
 
 /* TCA6408A settings */
-const tca6408a_t tca6408a_config = {.i2c_port = TCA6408A_I2C_NUM};
+const tca6408a_dev_t tca6408a_config = {.address = CHIRP_TCA6408A_ADDRESS,
+                                        .i2c_bus = CHIRP_I2C_BUS_0};
 
 /* Callback function pointers */
 static esp_timer_handle_t periodic_timer_handle_ptr = NULL;
 static ch_timer_callback_t periodic_timer_callback_ptr = NULL;
 
 static uint32_t periodic_timer_interval_us;
-
-/* esp-idf doesn't need this */
-// static uint16_t ultrasound_timer_period_in_tick = 0xFFFF;*
-// static uint16_t ultrasound_prev_period_end_in_tick;
 
 /* Counter used to decimate call to ultrasound timer callback from TC0 ISR in
    case decimation factor is != 1 */
@@ -79,10 +79,9 @@ static uint8_t decimation_counter = 0;
 static uint8_t decimation_factor;
 
 /* Forward declaration */
-// static void program_next_period(void);
-// static uint32_t get_period_in_tick(uint32_t interval_us);
 static void ext_int_init(void);
 static void find_sensors(void);
+static void i2c_master0_init() __attribute__((unused));
 
 /* =============== Functions ============== */
 
@@ -104,16 +103,34 @@ static void find_sensors(void);
 static void ioport_set_pin_dir_through_gpio(gpio_num_t gpio_num,
                                             gpio_mode_t gpio_mode)
 {
-  // gpio_reset_pin(gpio_num); // will clean intr flag, not good for ISR
+  /* 應該只有 INT pin 和 DUMMY pin 會 call */
 
-  /* special case for INT line */
-  if (gpio_mode == GPIO_MODE_INPUT && gpio_num == CHIRP_INT_IO6)
+  /* ignore dummy pin */
+  if (gpio_num == CHIRP_DUMMY_PIN)
+  {
+    ESP_LOGD("ioport_set_pin_dir_through_gpio", "Dummy Pin. Aborted!");
+    return;
+  }
+
+  /* enable interrupt when input (for these are INT line) */
+  /* TODO: v1, can be removed or not, if intr flag is already set in init */
+  if (gpio_mode == GPIO_MODE_INPUT)
   {
     // enable interrupt again
-    gpio_intr_enable(CHIRP_INT_IO6);
+    gpio_intr_enable(gpio_num);
   }
+  else if (gpio_mode == GPIO_MODE_OUTPUT)
+  {
+    gpio_intr_disable(gpio_num);
+  }
+
+  /* TODO: v2, if we init the gpio pin as GPIO_MODE_INPUT_OUTPUT, could this be
+   * simplified? */
   gpio_set_direction(gpio_num, gpio_mode);
-  ESP_LOGD("ioport_set_pin_dir_through_gpio", "Set gpio num: %d to mode: %d.",
+
+  ESP_LOGD("chbsp_hand_espidf",
+           "In function {ioport_set_pin_dir_through_gpio}: Set gpio num: %d to "
+           "mode: %d.",
            (int)gpio_num, (int)gpio_mode);
 }
 
@@ -125,13 +142,13 @@ static void ioport_set_pin_dir_through_gpio(gpio_num_t gpio_num,
  * The function calculates the correct register value for the TCA6408A to
  * configure the pin direction.
  *
- * @param pin See ch101_tca6408a_pin_t
+ * @param pin See chx01_tca6408a_pin_t
  * @param mode The mode to set for the pin (input or output).
  *
  * @example ioport_set_pin_dir_through_tca6408a(CHIRP_RST, GPIO_MODE_INPUT)
  * @note This function supports only GPIO_MODE_INPUT and GPIO_MODE_OUTPUT.
  */
-static void ioport_set_pin_dir_through_tca6408a(ch101_tca6408a_pin_t pin,
+static void ioport_set_pin_dir_through_tca6408a(chx01_tca6408a_pin_t pin,
                                                 gpio_mode_t mode)
 {
   /* check mode is whether GPIO_MODE_INPUT or GPIO_MODE_OUTPUT */
@@ -144,18 +161,25 @@ static void ioport_set_pin_dir_through_tca6408a(ch101_tca6408a_pin_t pin,
 
   /* get real pin of TCA6408A and shift it to fit the CONFIG register (0x04)
    * format */
-  uint8_t pin_reg = 1 << (pin & CH101_TCA_GET_PIN_MASK);
+  uint8_t tca_pin = pin & CHIRP_GET_TCA6408A_PIN_MASK;
+
+  if (tca_pin >= 8)
+  {
+    ESP_LOGE("ioport_set_pin_dir_through_tca6408a",
+             "Get TCA6408 Pin failed (more than 8 error).Aborted!");
+    return;
+  }
 
   if (mode == GPIO_MODE_OUTPUT)
   {
-    tca6408a_set_output(pin_reg, &tca6408a_config);
+    tca6408a_set_pin_output_mode(&tca6408a_config, tca_pin);
   }
   else
   {
-    tca6408a_set_input(pin_reg, &tca6408a_config);
+    tca6408a_set_pin_input_mode(&tca6408a_config, tca_pin);
   }
-  ESP_LOGD("ioport_set_pin_dir_through_tca6408a", "Set P%d to %s.",
-           pin & CH101_TCA_GET_PIN_MASK,
+
+  ESP_LOGD("ioport_set_pin_dir_through_tca6408a", "Set P%d to %s.", tca_pin,
            (mode == GPIO_MODE_OUTPUT) ? "output" : "input");
 }
 
@@ -177,36 +201,15 @@ static void ioport_set_pin_dir_through_tca6408a(ch101_tca6408a_pin_t pin,
  */
 static void ioport_set_pin_dir(uint8_t pin, gpio_mode_t mode)
 {
-  /* special case for INT line */
-  if (pin == CHIRP_INT_0)
+  if (pin & CHIRP_IS_TCA6408A_PIN_MASK)
   {
-    ioport_set_pin_dir_through_tca6408a((ch101_tca6408a_pin_t)pin, mode);
-
-    /* CHIRP_INT_IO6 should be configured too */
-    if (mode == GPIO_MODE_OUTPUT)
-    {
-      gpio_intr_disable(CHIRP_INT_IO6);
-    }
-    else if (mode == GPIO_MODE_INPUT)
-    {
-      ioport_set_pin_dir_through_gpio(CHIRP_INT_IO6, mode);
-    }
-    else
-    {
-      /* No other mode should be called */
-      ESP_LOGE("ioport_set_pin_dir",
-               "Mode error: %d when setting pin INT. Abort!", (int)mode);
-    }
-    return;
+    /* should be prog or reset pins only */
+    ioport_set_pin_dir_through_tca6408a((chx01_tca6408a_pin_t)pin, mode);
   }
 
-  // if pin is CH101_TCA_PIN format (7th bit is 1)
-  if (pin & CH101_TCA_PIN_MASK)
-  {
-    ioport_set_pin_dir_through_tca6408a((ch101_tca6408a_pin_t)pin, mode);
-  }
   else
   {
+    /* should be int and led pins only */
     ioport_set_pin_dir_through_gpio((gpio_num_t)pin, mode);
   }
 }
@@ -225,9 +228,20 @@ static void ioport_set_pin_dir(uint8_t pin, gpio_mode_t mode)
  */
 static void ioport_set_pin_level_through_gpio(gpio_num_t gpio_num, uint32_t val)
 {
+  /* ignore dummy pin */
+  if (gpio_num == CHIRP_DUMMY_PIN)
+  {
+    ESP_LOGD(
+        "chbsp_hand_espidf",
+        "In function {ioport_set_pin_level_through_gpio}: Dummy Pin. Aborted!");
+    return;
+  }
+
   gpio_set_level(gpio_num, val);
-  ESP_LOGD("ioport_set_pin_level_through_gpio", "Set gpio num: %d to %s.",
-           (int)gpio_num, (val == GPIO_LEVEL_HIGH) ? "high" : "low");
+  ESP_LOGD("chbsp_hand_espidf",
+           "In function {ioport_set_pin_level_through_gpio}: Set gpio num: %d "
+           "to %s.",
+           (int)gpio_num, (val == CHIRP_GPIO_LEVEL_HIGH) ? "high" : "low");
 }
 
 /**
@@ -244,24 +258,23 @@ static void ioport_set_pin_level_through_gpio(gpio_num_t gpio_num, uint32_t val)
  * @example ioport_set_pin_level_through_tca6408a(CH101_INT_TCA6408A_PIN,
  * GPIO_LEVEL_LOW); // Set TCA6408A P5(connect to CH-101 INT) to low
  */
-static void ioport_set_pin_level_through_tca6408a(ch101_tca6408a_pin_t pin,
+static void ioport_set_pin_level_through_tca6408a(chx01_tca6408a_pin_t pin,
                                                   uint32_t val)
 {
-  /* get real pin of TCA6408A and shift it to fit the CONFIG register (0x04)
-   * format */
-  uint8_t pin_reg = 1 << (pin & CH101_TCA_GET_PIN_MASK);
+  /* get real pin of TCA6408A */
+  uint8_t real_pin = pin & CHIRP_GET_TCA6408A_PIN_MASK;
 
-  if (val == GPIO_LEVEL_HIGH)
+  if (val == CHIRP_GPIO_LEVEL_HIGH)
   {
-    tca6408a_set_high(pin_reg, pin_reg, &tca6408a_config);
+    tca6408a_set_pin_high(&tca6408a_config, real_pin);
     ESP_LOGD("ioport_set_pin_level_through_tca6408a", "Set P%d to high.",
-             pin & CH101_TCA_GET_PIN_MASK);
+             real_pin);
   }
   else
   {
-    tca6408a_set_low(pin_reg, &tca6408a_config);
+    tca6408a_set_pin_low(&tca6408a_config, real_pin);
     ESP_LOGD("ioport_set_pin_level_through_tca6408a", "Set P%d to low.",
-             pin & CH101_TCA_GET_PIN_MASK);
+             real_pin);
   }
 }
 
@@ -283,16 +296,10 @@ static void ioport_set_pin_level_through_tca6408a(ch101_tca6408a_pin_t pin,
  */
 static void ioport_set_pin_level(uint8_t pin, uint32_t val)
 {
-  /* special case for INT line */
-  if (pin == CHIRP_INT_0)
-  {
-    /* No special case for changing level */
-  }
-
   // if pin is CH101_TCA_PIN format (7th bit is 1)
-  if (pin & CH101_TCA_PIN_MASK)
+  if (pin & CHIRP_IS_TCA6408A_PIN_MASK)
   {
-    ioport_set_pin_level_through_tca6408a((ch101_tca6408a_pin_t)pin, val);
+    ioport_set_pin_level_through_tca6408a((chx01_tca6408a_pin_t)pin, val);
   }
   else
   {
@@ -302,53 +309,53 @@ static void ioport_set_pin_level(uint8_t pin, uint32_t val)
 
 /* I2C related functions */
 
-/* For CH-101 usage */
+/* For TCA6408A usage */
 static void i2c_master0_init()
 {
-  const i2c_port_t i2c0_port = CHBSP_I2C_NUM;
+  const i2c_port_t i2c0_port = CHIRP_I2C_BUS_0;
   i2c_config_t i2c0_config = {.mode = I2C_MODE_MASTER,
-                              .sda_io_num = GPIO_NUM_12,
-                              .scl_io_num = GPIO_NUM_13,
+                              .sda_io_num = CHIRP_I2C_BUS_0_SDA_PIN,
+                              .scl_io_num = CHIRP_I2C_BUS_0_SCL_PIN,
                               /* TXS0102 requires not external pullup */
                               .sda_pullup_en = GPIO_PULLUP_DISABLE,
                               .scl_pullup_en = GPIO_PULLUP_DISABLE,
-                              .master.clk_speed = I2C_MASTER_FREQ_HZ};
+                              .master.clk_speed = CHIRP_I2C_BUS_SPEED};
 
   ESP_ERROR_CHECK(i2c_param_config(i2c0_port, &i2c0_config));
 
   /* WARNING: we disable the i2c master interrupt (which samg55 enable) */
   /* See i2c_master_register_event_callbacks() for more information */
   ESP_ERROR_CHECK(i2c_driver_install(i2c0_port, i2c0_config.mode,
-                                     I2C_MASTER_TX_BUF_DISABLE,
-                                     I2C_MASTER_RX_BUF_DISABLE, 0));
+                                     CHIRP_I2C_MASTER_TX_BUF_DISABLE,
+                                     CHIRP_I2C_MASTER_RX_BUF_DISABLE, 0));
 }
 
-/* For TCA6408A usage */
+/* For CH101 usage */
 static void i2c_master1_init()
 {
-  const i2c_port_t i2c1_port = TCA6408A_I2C_NUM;
+  const i2c_port_t i2c1_port = CHIRP_I2C_BUS_1;
   i2c_config_t i2c1_config = {.mode = I2C_MODE_MASTER,
-                              .sda_io_num = GPIO_NUM_4,
-                              .scl_io_num = GPIO_NUM_5,
+                              .sda_io_num = CHIRP_I2C_BUS_1_SDA_PIN,
+                              .scl_io_num = CHIRP_I2C_BUS_1_SCL_PIN,
 
                               /* already pull up by external resistors */
                               .sda_pullup_en = GPIO_PULLUP_DISABLE,
                               .scl_pullup_en = GPIO_PULLUP_DISABLE,
-                              .master.clk_speed = I2C_MASTER_FREQ_HZ};
+                              .master.clk_speed = CHIRP_I2C_BUS_SPEED};
 
   ESP_ERROR_CHECK(i2c_param_config(i2c1_port, &i2c1_config));
 
   /* WARNING: we disable the i2c master interrupt (which samg55 enable) */
   /* See i2c_master_register_event_callbacks() for more information */
   ESP_ERROR_CHECK(i2c_driver_install(i2c1_port, i2c1_config.mode,
-                                     I2C_MASTER_TX_BUF_DISABLE,
-                                     I2C_MASTER_RX_BUF_DISABLE, 0));
+                                     CHIRP_I2C_MASTER_TX_BUF_DISABLE,
+                                     CHIRP_I2C_MASTER_RX_BUF_DISABLE, 0));
 }
 
-esp_err_t i2c_master0_write_register(uint8_t address, uint8_t register_address,
+esp_err_t i2c_master1_write_register(uint8_t address, uint8_t register_address,
                                      size_t len, uint8_t* register_value)
 {
-  i2c_port_t i2c_num = CHBSP_I2C_NUM;
+  i2c_port_t i2c_num = CHIRP_I2C_BUS_1;
 
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
@@ -362,11 +369,11 @@ esp_err_t i2c_master0_write_register(uint8_t address, uint8_t register_address,
   return ret;
 }
 
-esp_err_t i2c_master0_write_register_raw(unsigned char address,
+esp_err_t i2c_master1_write_register_raw(unsigned char address,
                                          unsigned short len,
                                          unsigned char* data)
 {
-  const i2c_port_t i2c_num = CHBSP_I2C_NUM;
+  const i2c_port_t i2c_num = CHIRP_I2C_BUS_1;
 
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
@@ -381,7 +388,7 @@ esp_err_t i2c_master0_write_register_raw(unsigned char address,
   return ret;
 }
 
-esp_err_t i2c_master0_read_register(uint8_t address, uint8_t register_address,
+esp_err_t i2c_master1_read_register(uint8_t address, uint8_t register_address,
                                     uint16_t register_len,
                                     uint8_t* register_val)
 {
@@ -389,7 +396,7 @@ esp_err_t i2c_master0_read_register(uint8_t address, uint8_t register_address,
   /* start and info slave which internal reg address will be operated (write
    * before read) */
 
-  i2c_port_t i2c_num = CHBSP_I2C_NUM;
+  i2c_port_t i2c_num = CHIRP_I2C_BUS_1;
 
   i2c_master_start(cmd);
   i2c_master_write_byte(cmd, (address << 1) | I2C_MASTER_WRITE, true);
@@ -411,10 +418,10 @@ esp_err_t i2c_master0_read_register(uint8_t address, uint8_t register_address,
   return ret;
 }
 
-esp_err_t i2c_master0_read_register_raw(uint8_t address, size_t len,
+esp_err_t i2c_master1_read_register_raw(uint8_t address, size_t len,
                                         uint8_t* data)
 {
-  i2c_port_t i2c_num = CHBSP_I2C_NUM;
+  i2c_port_t i2c_num = CHIRP_I2C_BUS_1;
 
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
@@ -433,37 +440,53 @@ esp_err_t i2c_master0_read_register_raw(uint8_t address, size_t len,
 
 static void find_sensors(void)
 {
+  /* assume i2c bus already be initialized */
+  /* CH101 is on i2c master 1 bus */
   uint8_t sig_bytes[2];
 
-  /* WARNING: RST is same pin for test config, while in formal project HAND
-   * might not */
-  ioport_set_pin_dir(CHIRP_RST, GPIO_MODE_OUTPUT);
-  ioport_set_pin_level(CHIRP_RST, GPIO_LEVEL_HIGH);
+  /* TODO: v1, should add RESET, PROG, OK init here. By chbsp_gpio_init() */
+
+  ioport_set_pin_dir(CHIRP_RESET_1, GPIO_MODE_OUTPUT);
+  ioport_set_pin_dir(CHIRP_RESET_2, GPIO_MODE_OUTPUT);
+  ioport_set_pin_dir(CHIRP_RESET_3, GPIO_MODE_OUTPUT);
+  ioport_set_pin_dir(CHIRP_RESET_4, GPIO_MODE_OUTPUT);
+
+  /* Drive RESET high on all sensor ports */
+  ioport_set_pin_level(CHIRP_RESET_1, CHIRP_GPIO_LEVEL_HIGH);  // RESET_1=H
+  ioport_set_pin_level(CHIRP_RESET_2, CHIRP_GPIO_LEVEL_HIGH);  // RESET_2=H
+  ioport_set_pin_level(CHIRP_RESET_3, CHIRP_GPIO_LEVEL_HIGH);  // RESET_3=H
+  ioport_set_pin_level(CHIRP_RESET_4, CHIRP_GPIO_LEVEL_HIGH);  // RESET_4=H
 
   /* Drive PROG low on all sensor ports */
   /* TODO: make this a loop (limited by CHIRP_MAX_NUM_SENSORS) */
-  ioport_set_pin_dir(CHIRP_PROG_0, GPIO_MODE_OUTPUT);  // PROG_0=output
-  // ioport_set_pin_dir(CHIRP_PROG_1, GPIO_MODE_OUTPUT);  // PROG_1=output
-  // ioport_set_pin_dir(CHIRP_PROG_2, GPIO_MODE_OUTPUT);  // PROG_2=output
-  // ioport_set_pin_dir(CHIRP_PROG_3, GPIO_MODE_OUTPUT);  // PROG_3=output
-  ioport_set_pin_level(CHIRP_PROG_0, GPIO_LEVEL_LOW);  // PROG_0=L
-  // ioport_set_pin_level(CHIRP_PROG_1, GPIO_LEVEL_LOW);  // PROG_1=L
-  // ioport_set_pin_level(CHIRP_PROG_2, GPIO_LEVEL_LOW);  // PROG_2=L
-  // ioport_set_pin_level(CHIRP_PROG_3, GPIO_LEVEL_LOW);  // PROG_3=L
+  ioport_set_pin_dir(CHIRP_PROG_1, GPIO_MODE_OUTPUT);  // PROG_1=output
+  ioport_set_pin_dir(CHIRP_PROG_2, GPIO_MODE_OUTPUT);  // PROG_2=output
+  ioport_set_pin_dir(CHIRP_PROG_3, GPIO_MODE_OUTPUT);  // PROG_3=output
+  ioport_set_pin_dir(CHIRP_PROG_4, GPIO_MODE_OUTPUT);  // PROG_4=output
 
-  /* check sensor 0 */
-  /* WARNING: there's only 1 CH101 for test config */
-  ioport_set_pin_level(CHIRP_PROG_0, GPIO_LEVEL_HIGH);
-  tca6408a_test_read(&tca6408a_config);
+  ioport_set_pin_level(CHIRP_PROG_1, CHIRP_GPIO_LEVEL_LOW);  // PROG_1=L
+  ioport_set_pin_level(CHIRP_PROG_2, CHIRP_GPIO_LEVEL_LOW);  // PROG_2=L
+  ioport_set_pin_level(CHIRP_PROG_3, CHIRP_GPIO_LEVEL_LOW);  // PROG_3=L
+  ioport_set_pin_level(CHIRP_PROG_4, CHIRP_GPIO_LEVEL_LOW);  // PROG_4=L
 
-  /* WARNING: move to ext_int_init, because esp-idf i2c driver requires delete
-   * before reinstall. Not like samg55. */
-  // i2c_master0_init();
+  tca6408a_reg_info_t info;
+  tca6408a_read_all(&tca6408a_config, &info);
+  char s[120];
+  tca6408a_reg_info_to_str(&info, s, 120);
+  ESP_LOGI("find_sensors", "\n%s", s);
+
+  /* check sensor 1 */
+  ioport_set_pin_level(CHIRP_PROG_1, CHIRP_GPIO_LEVEL_HIGH);
+
+  tca6408a_read_all(&tca6408a_config, &info);
+  tca6408a_reg_info_to_str(&info, s, 120);
+  ESP_LOGI("find_sensors", "After set PROG1\n%s", s);
 
   sig_bytes[0] = 0;
   sig_bytes[1] = 0;
   esp_err_t err =
-      i2c_master0_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+      i2c_master1_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+
   if (err != ESP_OK)
   {
     ESP_LOGE("find_sensors", "CH-101 I2C bus err: %d", err);
@@ -471,40 +494,132 @@ static void find_sensors(void)
 
   int find_sensor_flag =
       (sig_bytes[0] == CH_SIG_BYTE_0) && (sig_bytes[1] == CH_SIG_BYTE_1);
-  ESP_LOGI("find_sensors", "Chirp sensor 0: %s.",
+  ESP_LOGI("find_sensors", "Chirp sensor 1: %s.",
            find_sensor_flag ? " FOUND " : "NOT FOUND");
-  ioport_set_pin_level(CHIRP_PROG_0, GPIO_LEVEL_LOW);
+
+  ioport_set_pin_level(CHIRP_PROG_1, CHIRP_GPIO_LEVEL_LOW);
+
+  /* check sensor 2 */
+
+  ioport_set_pin_level(CHIRP_PROG_2, CHIRP_GPIO_LEVEL_HIGH);
+
+  sig_bytes[0] = 0;
+  sig_bytes[1] = 0;
+  err = i2c_master1_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+
+  if (err != ESP_OK)
+  {
+    ESP_LOGE("find_sensors", "CH-101 I2C bus err: %d", err);
+  }
+
+  find_sensor_flag =
+      (sig_bytes[0] == CH_SIG_BYTE_0) && (sig_bytes[1] == CH_SIG_BYTE_1);
+  ESP_LOGI("find_sensors", "Chirp sensor 2: %s.",
+           find_sensor_flag ? " FOUND " : "NOT FOUND");
+
+  ioport_set_pin_level(CHIRP_PROG_2, CHIRP_GPIO_LEVEL_LOW);
+
+  /* check sensor 3 */
+
+  ioport_set_pin_level(CHIRP_PROG_3, CHIRP_GPIO_LEVEL_HIGH);
+
+  sig_bytes[0] = 0;
+  sig_bytes[1] = 0;
+  err = i2c_master1_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+
+  if (err != ESP_OK)
+  {
+    ESP_LOGE("find_sensors", "CH-101 I2C bus err: %d", err);
+  }
+
+  find_sensor_flag =
+      (sig_bytes[0] == CH_SIG_BYTE_0) && (sig_bytes[1] == CH_SIG_BYTE_1);
+  ESP_LOGI("find_sensors", "Chirp sensor 3: %s.",
+           find_sensor_flag ? " FOUND " : "NOT FOUND");
+
+  ioport_set_pin_level(CHIRP_PROG_3, CHIRP_GPIO_LEVEL_LOW);
+
+  /* check sensor 4 */
+
+  ioport_set_pin_level(CHIRP_PROG_4, CHIRP_GPIO_LEVEL_HIGH);
+
+  sig_bytes[0] = 0;
+  sig_bytes[1] = 0;
+  err = i2c_master1_read_register(CH_I2C_ADDR_PROG, 0x00, 2, sig_bytes);
+
+  if (err != ESP_OK)
+  {
+    ESP_LOGE("find_sensors", "CH-101 I2C bus err: %d", err);
+  }
+
+  find_sensor_flag =
+      (sig_bytes[0] == CH_SIG_BYTE_0) && (sig_bytes[1] == CH_SIG_BYTE_1);
+  ESP_LOGI("find_sensors", "Chirp sensor 4: %s.",
+           find_sensor_flag ? " FOUND " : "NOT FOUND");
+
+  ioport_set_pin_level(CHIRP_PROG_4, CHIRP_GPIO_LEVEL_LOW);
 }
 
+/**
+ * @brief
+ *
+ * @param ch_io_cb_para contain
+ */
 static void IRAM_ATTR chirp_isr_callback(void* ch_io_cb_para)
 {
-  /* Do not use ESP_LOG in this function */
+  esp_log_level_t log_level = esp_log_level_get("chbsp_hand_espidf");
+  esp_log_level_set("chbsp_hand_espidf", ESP_LOG_NONE);
+
   ch_io_int_callback_parameter_t* para =
       (ch_io_int_callback_parameter_t*)ch_io_cb_para;
+
+  /* user should make sure  */
+  uint8_t dev_num = para->io_index;
+  gpio_num_t io_pin = chirp_pin_io[dev_num];
+
+  /* TODO: v1, implement io pin logic here, see datasheet */
+  ioport_set_pin_level(io_pin, CHIRP_GPIO_LEVEL_LOW);
+  ioport_set_pin_dir(io_pin, GPIO_MODE_OUTPUT);
+
   if (para->grp_ptr->io_int_callback != NULL)
   {
+    /* enable interrupt here (in custom callback) */
     ch_io_int_callback_t func_ptr = para->grp_ptr->io_int_callback;
     func_ptr(para->grp_ptr, para->io_index);
   }
+
+  esp_log_level_set("chbsp_hand_espidf", log_level);
 }
 
 /* interrupt config */
 void ext_int_init(void)
 {
-  /* config an interrupt pin (IO 6) with ISR and pull down */
+  /* INT line init */
   /* default to input type */
-  gpio_config_t int_config = {.intr_type = GPIO_INTR_POSEDGE,
-                              .mode = GPIO_MODE_INPUT,
-                              .pin_bit_mask = (1ULL << CHIRP_INT_IO6),
-                              .pull_down_en = GPIO_PULLDOWN_ENABLE,
-                              .pull_up_en = GPIO_PULLUP_DISABLE};
+  uint64_t bit_mask = (1ULL << CHIRP_INT_1) | (1ULL << CHIRP_INT_2) |
+                      (1ULL << CHIRP_INT_3) | (1ULL << CHIRP_INT_4);
+
+  /* Initialize interrupt config, interrupt on rising edge. */
+  gpio_config_t int_config = {
+      .intr_type = GPIO_INTR_POSEDGE,
+      .mode = GPIO_MODE_INPUT,
+      .pin_bit_mask = bit_mask,
+      .pull_down_en = GPIO_PULLDOWN_DISABLE,  // TODO: v1, check this can be
+                                              // changed to ENABLE or not
+      .pull_up_en = GPIO_PULLUP_DISABLE};
 
   gpio_config(&int_config);
 
-  /* add interrupt and it's callback function */
+  /* add interrupt service */
   gpio_install_isr_service(ESP_INTR_FLAG_LEVEL3 | ESP_INTR_FLAG_IRAM);
-  gpio_isr_handler_add(CHIRP_INT_IO6, NULL, NULL);
-  gpio_intr_disable(CHIRP_INT_IO6);
+
+  /* TODO: v1, check this is ok for io pin */
+  ESP_LOGD("ext_int_init", "Close interrupt after initialized!");
+
+  gpio_intr_disable(CHIRP_INT_1);
+  gpio_intr_disable(CHIRP_INT_2);
+  gpio_intr_disable(CHIRP_INT_3);
+  gpio_intr_disable(CHIRP_INT_4);
 }
 
 /*!
@@ -527,9 +642,6 @@ void chbsp_board_init(ch_group_t* grp_ptr)
   ext_int_init();
   chbsp_i2c_init();
   find_sensors();
-
-  /* TODO: indicate alive */
-  // indicate_alive();
 }
 
 /*!
@@ -539,7 +651,10 @@ void chbsp_board_init(ch_group_t* grp_ptr)
  */
 void chbsp_reset_assert(void)
 {
-  ioport_set_pin_level(CHIRP_RST, GPIO_LEVEL_LOW);  // reset=L
+  ioport_set_pin_level(CHIRP_RESET_1, CHIRP_GPIO_LEVEL_LOW);  // reset=L
+  ioport_set_pin_level(CHIRP_RESET_2, CHIRP_GPIO_LEVEL_LOW);  // reset=L
+  ioport_set_pin_level(CHIRP_RESET_3, CHIRP_GPIO_LEVEL_LOW);  // reset=L
+  ioport_set_pin_level(CHIRP_RESET_4, CHIRP_GPIO_LEVEL_LOW);  // reset=L
 }
 
 /*!
@@ -549,7 +664,10 @@ void chbsp_reset_assert(void)
  */
 void chbsp_reset_release(void)
 {
-  ioport_set_pin_level(CHIRP_RST, GPIO_LEVEL_HIGH);  // reset=H
+  ioport_set_pin_level(CHIRP_RESET_1, CHIRP_GPIO_LEVEL_HIGH);  // reset=H
+  ioport_set_pin_level(CHIRP_RESET_2, CHIRP_GPIO_LEVEL_HIGH);  // reset=H
+  ioport_set_pin_level(CHIRP_RESET_3, CHIRP_GPIO_LEVEL_HIGH);  // reset=H
+  ioport_set_pin_level(CHIRP_RESET_4, CHIRP_GPIO_LEVEL_HIGH);  // reset=H
 }
 
 /*!
@@ -564,20 +682,17 @@ void chbsp_program_enable(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  /* for HAND_BUILD_TARGET_PORTING_CH101, we need to make sure that dev_num
-   * always be 0 */
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_program_enable",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should not larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
   // select Chirp chip PROGRAM line on Atmel board according to chip number
   ioport_set_pin_level(chirp_pin_prog[dev_num],
-                       GPIO_LEVEL_HIGH);  // PROG_0=H
+                       CHIRP_GPIO_LEVEL_HIGH);  // PROG_0=H
 }
 
 /*!
@@ -592,20 +707,17 @@ void chbsp_program_disable(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  /* for HAND_BUILD_TARGET_PORTING_CH101, we need to make sure that dev_num
-   * always be 0 */
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_program_disable",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should not larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
   // select Chirp chip PROGRAM line on Atmel board according to chip number
   ioport_set_pin_level(chirp_pin_prog[dev_num],
-                       GPIO_LEVEL_LOW);  // PROG_0=L
+                       CHIRP_GPIO_LEVEL_LOW);  // PROG_0=L
 }
 
 /*!
@@ -621,14 +733,11 @@ void chbsp_set_io_dir_out(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  /* for HAND_BUILD_TARGET_PORTING_CH101, we need to make sure that dev_num
-   * always be 0 */
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_set_io_dir_out",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should not larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
@@ -648,12 +757,11 @@ void chbsp_set_io_dir_in(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_set_io_dir_in",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should not larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
@@ -673,16 +781,22 @@ void chbsp_group_set_io_dir_out(ch_group_t* grp_ptr)
 {
   uint8_t dev_num;
 
+  /* configure */
   for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++)
   {
     ch_dev_t* dev_ptr = ch_get_dev_ptr(grp_ptr, dev_num);
 
-    /* TODO: to improve performance, Please take a look at chbsp_chirp_samg55.c
+    /* TODO: v1, to improve performance, using mask. Please take a look at
+     * chbsp_chirp_samg55.c
      */
-    /* Note: there's no differene in performance if you only have one CH-101 */
     if (ch_sensor_is_connected(dev_ptr))
     {
       chbsp_set_io_dir_out(dev_ptr);
+    }
+    else
+    {
+      ESP_LOGE("chbsp_group_set_io_dir_out", "ch sensor %d is not connected!",
+               dev_num);
     }
   }
 }
@@ -704,12 +818,17 @@ void chbsp_group_set_io_dir_in(ch_group_t* grp_ptr)
   {
     ch_dev_t* dev_ptr = ch_get_dev_ptr(grp_ptr, dev_num);
 
-    /* TODO: to improve performance, Please take a look at chbsp_chirp_samg55.c
+    /* TODO: v1, to improve performance, using mask. Please take a look at
+     * chbsp_chirp_samg55.c
      */
-    /* Note: there's no differene in performance if you only have one CH-101 */
     if (ch_sensor_is_connected(dev_ptr))
     {
       chbsp_set_io_dir_in(dev_ptr);
+    }
+    else
+    {
+      ESP_LOGE("chbsp_group_set_io_dir_in", "ch sensor %d is not connected!",
+               dev_num);
     }
   }
 }
@@ -727,17 +846,21 @@ void chbsp_group_pin_init(ch_group_t* grp_ptr)
 {
   uint8_t dev_num;
 
-  ioport_set_pin_dir(CHIRP_PROG_0, GPIO_MODE_OUTPUT);  // PROG_0=output
-  // ioport_set_pin_dir(CHIRP_PROG_1, IOPORT_DIR_OUTPUT); //PROG_1=output
-  // ioport_set_pin_dir(CHIRP_PROG_2, IOPORT_DIR_OUTPUT); //PROG_2=output
-  // ioport_set_pin_dir(CHIRP_PROG_3, IOPORT_DIR_OUTPUT); //PROG_3=output
+  ioport_set_pin_dir(CHIRP_PROG_1, GPIO_MODE_OUTPUT);  // PROG_1=output
+  ioport_set_pin_dir(CHIRP_PROG_2, GPIO_MODE_OUTPUT);  // PROG_2=output
+  ioport_set_pin_dir(CHIRP_PROG_3, GPIO_MODE_OUTPUT);  // PROG_3=output
+  ioport_set_pin_dir(CHIRP_PROG_4, GPIO_MODE_OUTPUT);  // PROG_4=output
 
-  ioport_set_pin_level(CHIRP_PROG_0, GPIO_LEVEL_LOW);  // PROG_0=L
-  // ioport_set_pin_level(CHIRP_PROG_1, IOPORT_PIN_LEVEL_LOW); //PROG_1=L
-  // ioport_set_pin_level(CHIRP_PROG_2, IOPORT_PIN_LEVEL_LOW); //PROG_2=L
-  // ioport_set_pin_level(CHIRP_PROG_3, IOPORT_PIN_LEVEL_LOW); //PROG_3=L
+  ioport_set_pin_level(CHIRP_PROG_1, CHIRP_GPIO_LEVEL_LOW);  // PROG_1=L
+  ioport_set_pin_level(CHIRP_PROG_2, CHIRP_GPIO_LEVEL_LOW);  // PROG_2=L
+  ioport_set_pin_level(CHIRP_PROG_3, CHIRP_GPIO_LEVEL_LOW);  // PROG_3=L
+  ioport_set_pin_level(CHIRP_PROG_4, CHIRP_GPIO_LEVEL_LOW);  // PROG_4=L
 
-  ioport_set_pin_dir(CHIRP_RST, GPIO_MODE_OUTPUT);  // reset=output
+  ioport_set_pin_dir(CHIRP_RESET_1, GPIO_MODE_OUTPUT);  // RESET_1=output
+  ioport_set_pin_dir(CHIRP_RESET_2, GPIO_MODE_OUTPUT);  // RESET_2=output
+  ioport_set_pin_dir(CHIRP_RESET_3, GPIO_MODE_OUTPUT);  // RESET_3=output
+  ioport_set_pin_dir(CHIRP_RESET_4, GPIO_MODE_OUTPUT);  // RESET_4=output
+
   chbsp_reset_assert();
 
   for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++)
@@ -756,37 +879,28 @@ void chbsp_group_pin_init(ch_group_t* grp_ptr)
   ESP_LOGW("chbsp_group_pin_init",
            "We assume the interrupt config was done in ext_int_init and the "
            "related flags never be changed!");
-  // for(port_num = 0; port_num < grp_ptr->num_ports; port_num++ ) {
-  // 	pio_configure(PIN_EXT_INTERRUPT_PIO, PIN_EXT_INTERRUPT_TYPE,
-  // chirp_pin_io_irq[port_num], PIN_EXT_INTERRUPT_ATTR);
-  // }
 
-  /* remove motionINT */
-  // pio_configure(PIN_EXT_INTERRUPT_PIO, PIN_EXT_INTERRUPT_TYPE,
-  // PIN_EXT_MotionINT_MASK, 		      PIN_EXT_INTERRUPT_ATTR);
-
-  /* Initialize PIO interrupt handler, interrupt on rising edge. */
   /* Note: gpio_install_isr_service() already called in ext_int_init() */
   /* Note: do not create ch_io_it_cb_para0 in this function, which leads to pass
    * stack-allocated pointers to ISRs problem */
   /* create a callback for sensor 0 */
-  ch_io_it_cb_para0.grp_ptr = grp_ptr;  // update grp_ptr
-  ch_io_it_cb_para0.io_index = 0;       // sensor 0
-  gpio_isr_handler_add(CHIRP_INT_IO6, chirp_isr_callback,
-                       (void*)&ch_io_it_cb_para0);
+  /* Note: io_index is already set */
+  ch_io_it_cb_para1.grp_ptr = grp_ptr;  // update grp_ptr
+  ch_io_it_cb_para2.grp_ptr = grp_ptr;  // update grp_ptr
+  ch_io_it_cb_para3.grp_ptr = grp_ptr;  // update grp_ptr
+  ch_io_it_cb_para4.grp_ptr = grp_ptr;  // update grp_ptr
 
-  // TODO: other handler for sensor 1, 2, ...
-  // gpio_isr_handler_add(CHIRP_IO_2, chirp_isr_callback,
-  // (void*)&para1);
+  /* add isr handler */
+  gpio_isr_handler_add(CHIRP_INT_1, chirp_isr_callback,
+                       (void*)&ch_io_it_cb_para1);
+  gpio_isr_handler_add(CHIRP_INT_2, chirp_isr_callback,
+                       (void*)&ch_io_it_cb_para2);
+  gpio_isr_handler_add(CHIRP_INT_3, chirp_isr_callback,
+                       (void*)&ch_io_it_cb_para3);
+  gpio_isr_handler_add(CHIRP_INT_4, chirp_isr_callback,
+                       (void*)&ch_io_it_cb_para4);
 
-  /* remove motionINT handler */
-  // pio_handler_set(PIN_EXT_INTERRUPT_PIO, PIN_EXT_INTERRUPT_ID,
-  // PIN_EXT_MotionINT_MASK,
-  // PIN_EXT_INTERRUPT_ATTR, (void (*) (uint32_t,
-  // uint32_t))ext_MotionINT_handler);
-
-  /* remove push button (PIO) interrupt. */
-  // pio_handler_set_priority(PIN_EXT_INTERRUPT_PIO, PIN_EXT_INTERRUPT_IRQn, 0);
+  ESP_LOGD("chbsp_group_pin_init", "GPIO ISR handler added!");
 }
 
 /*!
@@ -813,6 +927,11 @@ void chbsp_group_io_clear(ch_group_t* grp_ptr)
       /* Note: there's no differene in performance if you only have one CH-101
        */
       chbsp_io_clear(dev_ptr);
+    }
+    else
+    {
+      ESP_LOGE("chbsp_group_io_clear", "ch sensor %d is not connected!",
+               dev_num);
     }
   }
 }
@@ -842,16 +961,20 @@ void chbsp_group_io_set(ch_group_t* grp_ptr)
        */
       chbsp_io_set(dev_ptr);
     }
+    else
+    {
+      ESP_LOGE("chbsp_group_io_set", "ch sensor %d is not connected!", dev_num);
+    }
   }
 }
 
 /*!
- * \brief Disable interrupts for a group of sensors
+ * \brief Enable interrupts for a group of sensors
  *
  * \param grp_ptr 	pointer to the ch_group_t config structure for a group
  * of sensors
  *
- * For each sensor in the group, this function disables the host interrupt
+ * For each sensor in the group, this function enables the host interrupt
  * associated with the Chirp sensor device's INT line.
  */
 void chbsp_group_io_interrupt_enable(ch_group_t* grp_ptr)
@@ -878,18 +1001,22 @@ void chbsp_io_interrupt_enable(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_io_interrupt_enable",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should be no larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
   if (ch_sensor_is_connected(dev_ptr))
   {
-    gpio_intr_enable(CHIRP_INT_IO6);
+    gpio_intr_enable(chirp_pin_io[dev_num]);
+  }
+  else
+  {
+    ESP_LOGE("chbsp_io_interrupt_enable", "ch sensor %d is not connected!",
+             dev_num);
   }
 }
 
@@ -927,18 +1054,22 @@ void chbsp_io_interrupt_disable(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_io_interrupt_disable",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should be no larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
   if (ch_sensor_is_connected(dev_ptr))
   {
-    gpio_intr_disable(CHIRP_INT_IO6);
+    gpio_intr_disable(chirp_pin_io[dev_num]);
+  }
+  else
+  {
+    ESP_LOGE("chbsp_io_interrupt_disable", "ch sensor %d is not connected!",
+             dev_num);
   }
 }
 
@@ -954,18 +1085,21 @@ void chbsp_io_clear(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_io_clear",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should be no larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
   if (ch_sensor_is_connected(dev_ptr))
   {
-    ioport_set_pin_level(chirp_pin_io[dev_num], GPIO_LEVEL_LOW);
+    ioport_set_pin_level(chirp_pin_io[dev_num], CHIRP_GPIO_LEVEL_LOW);
+  }
+  else
+  {
+    ESP_LOGE("chbsp_io_clear", "ch sensor %d is not connected!", dev_num);
   }
 }
 
@@ -981,18 +1115,21 @@ void chbsp_io_set(ch_dev_t* dev_ptr)
 {
   uint8_t dev_num = ch_get_dev_num(dev_ptr);
 
-  if (dev_num != 0)
+  if (dev_num > CHIRP_USE_NUM_SENSORS)
   {
     ESP_LOGE("chbsp_io_set",
-             "Dev number should always be 0 under "
-             "HAND_BUILD_TARGET_PORTING_CH101. But now it's: %d. Abort!",
-             dev_num);
+             "Dev number should be no larger than %d. But now it's: %d. Abort!",
+             CHIRP_USE_NUM_SENSORS, dev_num);
     return;
   }
 
   if (ch_sensor_is_connected(dev_ptr))
   {
-    ioport_set_pin_level(chirp_pin_io[dev_num], GPIO_LEVEL_HIGH);
+    ioport_set_pin_level(chirp_pin_io[dev_num], CHIRP_GPIO_LEVEL_HIGH);
+  }
+  else
+  {
+    ESP_LOGE("chbsp_io_set", "ch sensor %d is not connected!", dev_num);
   }
 }
 
@@ -1009,11 +1146,13 @@ void chbsp_io_set(ch_dev_t* dev_ptr)
  *
  * The callback function will be called at interrupt level from the interrupt
  * service routine.
+ *
+ * \note Only nonblock function will use this
  */
 void chbsp_io_callback_set(ch_io_int_callback_t callback_func_ptr)
 {
-  /* for single usage, comment this if not use */
-  // io_int_callback_ptr = callback_func_ptr;
+  /* TODO: v2, implement this. Change */
+  ESP_LOGW("chbsp_io_callback_set", "This function is not implemented yet!");
 }
 
 /**
@@ -1064,7 +1203,8 @@ int chbsp_i2c_init(void)
   static int is_init = 0;
   if (!is_init)
   {
-    i2c_master0_init();
+    /* Note: i2c master 0 (TCA6408A - I2C) should init outside of the lib */
+    // i2c_master0_init();
     i2c_master1_init();
   }
   else
@@ -1129,15 +1269,14 @@ esp_err_t chbsp_i2c_write(ch_dev_t* dev_ptr, uint8_t* data, uint16_t num_bytes)
 {
   esp_err_t error = 0;
 
-  if (dev_ptr->i2c_bus_index == 0)
+  if (dev_ptr->i2c_bus_index != CHIRP_I2C_BUS_1)
   {
-    error =
-        i2c_master0_write_register_raw(dev_ptr->i2c_address, num_bytes, data);
+    ESP_LOGE("chbsp_i2c_write",
+             "HAND ESPIDF CHX01 I2C bus should always be 1.");
+    return ESP_ERR_INVALID_ARG;
   }
-  else if (dev_ptr->i2c_bus_index == 1)
-  {
-    ESP_LOGE("chbsp_i2c_write", "I2C bus should always be 0.");
-  }
+
+  error = i2c_master1_write_register_raw(dev_ptr->i2c_address, num_bytes, data);
 
   return error;
 }
@@ -1162,15 +1301,15 @@ esp_err_t chbsp_i2c_mem_write(ch_dev_t* dev_ptr, uint16_t mem_addr,
                               uint8_t* data, uint16_t num_bytes)
 {
   esp_err_t error = 0;
-  if (dev_ptr->i2c_bus_index == 0)
+  if (dev_ptr->i2c_bus_index != CHIRP_I2C_BUS_1)
   {
-    error = i2c_master0_write_register(dev_ptr->i2c_address, mem_addr,
-                                       num_bytes, data);
+    ESP_LOGE("chbsp_i2c_write",
+             "HAND ESPIDF CHX01 I2C bus should always be 1.");
+    return ESP_ERR_INVALID_ARG;
   }
-  else if (dev_ptr->i2c_bus_index == 1)
-  {
-    ESP_LOGE("chbsp_i2c_mem_write", "I2C bus should always be 0.");
-  }
+
+  error = i2c_master1_write_register(dev_ptr->i2c_address, mem_addr, num_bytes,
+                                     data);
   return error;
 }
 
@@ -1193,9 +1332,9 @@ int chbsp_i2c_write_nb(ch_dev_t __attribute__((unused)) * dev_ptr,
                        uint8_t __attribute__((unused)) * data,
                        uint16_t __attribute__((unused)) num_bytes)
 {
-  // TODO: implement for HAND_BUILD_TARGET_PORTING_CH101 later
-  ESP_LOGW("chbsp_i2c_write_nb",
-           "Function: chbsp_i2c_write_nb not implemented!");
+  // TODO: v2, implement later
+  ESP_LOGE("chbsp_i2c_write_nb",
+           "Function: chbsp_i2c_write_nb is not implemented!");
   return 1;
 }
 
@@ -1222,9 +1361,9 @@ int chbsp_i2c_mem_write_nb(ch_dev_t __attribute__((unused)) * dev_ptr,
                            uint8_t __attribute__((unused)) * data,
                            uint16_t __attribute__((unused)) num_bytes)
 {
-  // TODO: implement for HAND_BUILD_TARGET_PORTING_CH101 later
-  ESP_LOGW("chbsp_i2c_mem_write_nb",
-           "Function: chbsp_i2c_mem_write_nb not implemented!");
+  // TODO: v2, implement later
+  ESP_LOGE("chbsp_i2c_mem_write_nb",
+           "Function: chbsp_i2c_mem_write_nb is not implemented!");
   return 1;
 }
 
@@ -1247,14 +1386,13 @@ esp_err_t chbsp_i2c_read(ch_dev_t* dev_ptr, uint8_t* data, uint16_t num_bytes)
   uint8_t i2c_addr = ch_get_i2c_address(dev_ptr);
   uint8_t bus_num = ch_get_i2c_bus(dev_ptr);
 
-  if (bus_num == 0)
+  if (bus_num != CHIRP_I2C_BUS_1)
   {
-    error = i2c_master0_read_register_raw(i2c_addr, num_bytes, data);
+    ESP_LOGE("chbsp_i2c_read", "I2C bus for CHX01 should always be 1.");
+    return ESP_ERR_INVALID_ARG;
   }
-  else if (bus_num == 1)
-  {
-    ESP_LOGE("chbsp_i2c_read", "I2C bus should always be 0.");
-  }
+
+  error = i2c_master1_read_register_raw(i2c_addr, num_bytes, data);
   return error;
 }
 
@@ -1282,14 +1420,13 @@ esp_err_t chbsp_i2c_mem_read(ch_dev_t* dev_ptr, uint16_t mem_addr,
   uint8_t i2c_addr = ch_get_i2c_address(dev_ptr);
   uint8_t bus_num = ch_get_i2c_bus(dev_ptr);
 
-  if (bus_num == 0)
+  if (bus_num != CHIRP_I2C_BUS_1)
   {
-    error = i2c_master0_read_register(i2c_addr, mem_addr, num_bytes, data);
+    ESP_LOGE("chbsp_i2c_mem_read", "I2C bus for CHX01 should always be 1.");
+    return ESP_ERR_INVALID_ARG;
   }
-  else if (bus_num == 1)
-  {
-    ESP_LOGE("chbsp_i2c_read", "I2C bus should always be 0.");
-  }
+
+  error = i2c_master1_read_register(i2c_addr, mem_addr, num_bytes, data);
   return error;
 }
 
@@ -1310,7 +1447,7 @@ esp_err_t chbsp_i2c_mem_read(ch_dev_t* dev_ptr, uint16_t mem_addr,
  */
 int chbsp_i2c_read_nb(ch_dev_t* dev_ptr, uint8_t* data, uint16_t num_bytes)
 {
-  /* TODO: implement later */
+  /* TODO: v2, implement later */
   ESP_LOGW("chbsp_i2c_read_nb", "Function: chbsp_i2c_read_nb not implemented!");
   return 1;
 }
@@ -1334,6 +1471,7 @@ int chbsp_i2c_read_nb(ch_dev_t* dev_ptr, uint8_t* data, uint16_t num_bytes)
 int chbsp_i2c_mem_read_nb(ch_dev_t* dev_ptr, uint16_t mem_addr, uint8_t* data,
                           uint16_t num_bytes)
 {
+  /* TODO: v2, implement later */
   ESP_LOGW("chbsp_i2c_mem_read_nb",
            "Function: chbsp_i2c_mem_read_nb not implemented!");
   return 1;
@@ -1351,15 +1489,16 @@ void chbsp_i2c_reset(ch_dev_t* dev_ptr)
 {
   uint8_t bus_num = ch_get_i2c_bus(dev_ptr);
 
-  if (bus_num == 0)
+  if (bus_num != CHIRP_I2C_BUS_1)
   {
-    /* TODO: check need deinit() here or not */
-    i2c_master0_init();
+    ESP_LOGE("chbsp_i2c_reset", "I2C bus for CHX01 should always be 1.");
+    return;
   }
-  else if (bus_num == 1)
-  {
-    ESP_LOGE("chbsp_i2c_reset", "I2C bus should always be 0!");
-  }
+
+  ESP_LOGW("chbsp_i2c_reset", "This function should not be called. Aborted!");
+
+  /* TODO: v2, uninstall and install again */
+  // i2c_master1_init();
 }
 
 /*!
@@ -1407,45 +1546,21 @@ uint8_t chbsp_periodic_timer_init(uint16_t interval_ms,
 
 void chbsp_periodic_timer_change_period(uint32_t new_interval_us)
 {
-  /* TODO: could we use esp_timer_restart(handle, new_interval_us) */
   periodic_timer_interval_us = new_interval_us;
   /* restart if timer is running */
   if (esp_timer_is_active(periodic_timer_handle_ptr))
   {
     esp_timer_restart(periodic_timer_handle_ptr, periodic_timer_interval_us);
   }
+  else
+  {
+    ESP_LOGE("chbsp_periodic_timer_change_period",
+             "esp timer for CHx01 not started yet. Please start it first!");
+  }
 }
 
-/* For esp-idf, this function is not needed */
-
-// uint32_t get_period_in_tick(uint32_t interval_us)
-// {
-//   uint64_t timer_period_in_tick =
-//       (uint64_t)ULTRASOUND_TIMER_FREQUENCY * interval_us / 1000000;
-
-//   /* If the ODR is too slow to be handled then program a faster interrupt and
-//    * decimate it */
-//   if (timer_period_in_tick > UINT16_MAX)
-//     decimation_factor = timer_period_in_tick / UINT16_MAX + 1;
-//   else
-//     decimation_factor = 1;
-
-//   /* Calculate the final tick in case a decimation is needed */
-//   return (uint32_t)(timer_period_in_tick / decimation_factor);
-// }
-
-/* For esp-idf, this function is not needed */
-
-// void program_next_period(void)
-// {
-//   uint32_t time =
-//       ultrasound_prev_period_end_in_tick + ultrasound_timer_period_in_tick;
-//   ultrasound_prev_period_end_in_tick = time;
-//   tc_write_rc(TC0, TC_CHANNEL_US, (uint16_t)(time & 0xFFFF));
-// }
-
 /*!
- * \brief Enable periodic timer interrupt.
+ * \brief Enable (start) periodic timer interrupt.
  *
  * This function enables the interrupt associated with the periodic timer
  * initialized by \a chbsp_periodic_timer_init().
@@ -1456,18 +1571,22 @@ void chbsp_periodic_timer_irq_enable(void)
   {
     ESP_LOGE("chbsp_periodic_timer_irq_enable",
              "Periodic timer not init yet! Please call "
-             "`chbsp_periodic_timer_init()` first.");
+             "`chbsp_periodic_timer_init()` first. Aborted!");
+    return;
   }
 
   if (esp_timer_is_active(periodic_timer_handle_ptr))
   {
-    /* Do nothing */
+    ESP_LOGW("chbsp_periodic_timer_irq_enable",
+             "Periodic timer for CHx01 is already started!");
+    return;
   }
-  else
-  {
-    esp_timer_start_periodic(periodic_timer_handle_ptr,
-                             periodic_timer_interval_us);
-  }
+
+  /* start the timer */
+  /* TODO: v2, check if we can use esp_timer_restart to replace all
+   * esp_timer_start_periodic */
+  esp_timer_start_periodic(periodic_timer_handle_ptr,
+                           periodic_timer_interval_us);
 }
 
 /*!
@@ -1483,13 +1602,18 @@ void chbsp_periodic_timer_irq_disable(void)
     ESP_LOGE("chbsp_periodic_timer_irq_disable",
              "Periodic timer not init yet! Please call "
              "`chbsp_periodic_timer_init()` first.");
+    return;
   }
 
-  /* esp-idf only has esp_timer_stop() */
-  if (esp_timer_is_active(periodic_timer_handle_ptr))
+  if (!esp_timer_is_active(periodic_timer_handle_ptr))
   {
-    esp_timer_stop(periodic_timer_handle_ptr);
+    ESP_LOGW("chbsp_periodic_timer_irq_disable",
+             "Periodic timer for CHx01 is already stopped!");
+    return;
   }
+
+  /* there is only timer stop in espidf */
+  esp_timer_stop(periodic_timer_handle_ptr);
 }
 
 /*!
@@ -1502,6 +1626,15 @@ void chbsp_periodic_timer_irq_disable(void)
  */
 uint8_t chbsp_periodic_timer_start(void)
 {
+  if (periodic_timer_handle_ptr == NULL)
+  {
+    ESP_LOGE("chbsp_periodic_timer_start",
+             "Periodic timer not init yet! Please call "
+             "`chbsp_periodic_timer_init()` first.");
+    /* TODO: v1, check this return value type (maybe to int) */
+    return 0;
+  }
+
   if (esp_timer_is_active(periodic_timer_handle_ptr))
   {
     esp_timer_restart(periodic_timer_handle_ptr, periodic_timer_interval_us);
@@ -1555,8 +1688,7 @@ void chbsp_periodic_timer_handler(void* __attribute__((unused)) para)
   ch_timer_callback_t func_ptr = periodic_timer_callback_ptr;
 
   decimation_counter++;
-  /* esp-idf timer system doesn't need this */
-  // program_next_period();
+
   if (decimation_counter >= decimation_factor)
   {
     decimation_counter = 0;
@@ -1575,7 +1707,7 @@ void chbsp_periodic_timer_handler(void* __attribute__((unused)) para)
  * associated with the I2C, external GPIO pins, and the periodic timer (if used)
  * are able to wake up the device.
  */
-void chbsp_proc_sleep(void) { /* We don't need this for demo */ }
+void chbsp_proc_sleep(void) { /* TODO: v2, wait for implementing */ }
 
 /*!
  * \brief Turn on an LED on the board.
@@ -1588,7 +1720,7 @@ void chbsp_proc_sleep(void) { /* We don't need this for demo */ }
  */
 void chbsp_led_on(uint8_t led_num)
 {
-  gpio_set_level(chirp_led_pins[led_num], GPIO_LEVEL_HIGH);
+  gpio_set_level(chirp_led_pins[led_num], CHIRP_GPIO_LEVEL_HIGH);
 }
 
 /*!
@@ -1602,7 +1734,7 @@ void chbsp_led_on(uint8_t led_num)
  */
 void chbsp_led_off(uint8_t led_num)
 {
-  gpio_set_level(chirp_led_pins[led_num], GPIO_LEVEL_LOW);
+  gpio_set_level(chirp_led_pins[led_num], CHIRP_GPIO_LEVEL_LOW);
 }
 
 /*!
@@ -1616,10 +1748,13 @@ void chbsp_led_off(uint8_t led_num)
  */
 void chbsp_led_toggle(uint8_t led_num)
 {
+  ESP_LOGE("chbsp_led_toggle", "Not implemented in HAND ESPIDF!");
+  return;
+
   /* XXX: if we use GPIO_MODE_OUTPUT, then gpio_get_level() always return 0.
    * Hence we should modify the config pin for led gpio. Currently, the
    * alternative is to use a static state, for there's only one sensor. */
-  static int led0_state = GPIO_LEVEL_LOW;
+  static int led0_state = CHIRP_GPIO_LEVEL_LOW;
   // int state = gpio_get_level(chirp_led_pins[led_num]);
 
   if (led_num != 0)
@@ -1638,7 +1773,13 @@ void chbsp_led_toggle(uint8_t led_num)
  *
  * This function prints debug information to the console.
  */
-void chbsp_print_str(char* str) { printf(str); }
+void chbsp_print_str(char* str)
+{
+  /* redirect to ESP_LOGD */
+  ESP_LOGD("CHX01_CORE", "%s", str);
+
+  // printf(str);
+}
 
 /*!
  * \brief Return the current time in ms

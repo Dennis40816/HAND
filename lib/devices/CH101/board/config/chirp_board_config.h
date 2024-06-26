@@ -40,15 +40,15 @@
 
 /* Settings for the Chirp SmartSonic board */
 #define CHIRP_MAX_NUM_SENSORS 		4		// maximum possible number of sensor devices
-#define CHIRP_USE_NUM_SENSORS       1
+#define CHIRP_USE_NUM_SENSORS       4
 
 #define CHIRP_NUM_I2C_BUSES 		1		// number of I2C buses used by sensors
 
-#define CHIRP_PIN_PROG   {CHIRP_PROG_0, CHIRP_PROG_1, CHIRP_PROG_2, CHIRP_PROG_3}
-#define CHIRP_PIN_IO     {CHIRP_INT_0, CHIRP_INT_1, CHIRP_INT_2, CHIRP_INT_3}
+#define CHIRP_PIN_PROG   {CHIRP_PROG_1, CHIRP_PROG_2, CHIRP_PROG_3, CHIRP_PROG_4}
+#define CHIRP_PIN_IO     {CHIRP_INT_1, CHIRP_INT_2, CHIRP_INT_3, CHIRP_INT_4}
 /* esp-idf don't need irq mask */
 // #define CHIRP_PIN_IO_IRQ {PIN_EXT_ChirpINT0_MASK, PIN_EXT_ChirpINT1_MASK, PIN_EXT_ChirpINT2_MASK, PIN_EXT_ChirpINT3_MASK}
-#define CHIRP_PIN_LED    {CHIRP_OK_0, CHIRP_OK_3, CHIRP_OK_2, CHIRP_OK_1}
+#define CHIRP_PIN_LED    {CHIRP_OK_1, CHIRP_OK_2, CHIRP_OK_3, CHIRP_OK_4}
 
 /* Deactivate use of debug I2C interface */
 #define USE_STD_I2C_FOR_IQ		(1)

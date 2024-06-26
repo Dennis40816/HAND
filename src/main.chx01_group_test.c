@@ -49,6 +49,7 @@
 
 /* esp-idf */
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 // clang-format on
@@ -148,21 +149,36 @@ static uint8_t handle_iq_data_done(ch_group_t *grp_ptr);
 #endif
 #endif
 
+static void i2c_master0_init()
+{
+  const i2c_port_t i2c0_port = I2C_NUM_0;
+  i2c_config_t i2c0_config = {.mode = I2C_MODE_MASTER,
+                              .sda_io_num = GPIO_NUM_1,
+                              .scl_io_num = GPIO_NUM_0,
+                              /* TXS0102 requires not external pullup */
+                              .sda_pullup_en = GPIO_PULLUP_DISABLE,
+                              .scl_pullup_en = GPIO_PULLUP_DISABLE,
+                              .master.clk_speed = 400000};
+
+  ESP_ERROR_CHECK(i2c_param_config(i2c0_port, &i2c0_config));
+
+  /* WARNING: we disable the i2c master interrupt (which samg55 enable) */
+  /* See i2c_master_register_event_callbacks() for more information */
+  ESP_ERROR_CHECK(i2c_driver_install(i2c0_port, i2c0_config.mode, 0, 0, 0));
+}
+
 void app_main(void)
 {
-  esp_log_level_set("*", ESP_LOG_INFO);
+  esp_log_level_set("*", ESP_LOG_DEBUG);
   ch_group_t *grp_ptr = &chirp_group;
   uint8_t chirp_error = 0;
   uint8_t num_ports;
   uint8_t dev_num;
 
-  /* close led */
-  gpio_set_direction(GPIO_NUM_48, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_48, 0);
-
-  /* set tca6408a address line (avoid address ) */
-  gpio_set_direction(GPIO_NUM_1, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_1, 0);
+  /* NOTE: init i2c bus 0 */
+  vTaskDelay(pdMS_TO_TICKS(3000));
+  ESP_LOGI("app_main", "Init I2C BUS 0 for TCA6408A");
+  i2c_master0_init();
 
   /* Initialize board hardware functions
    *   This call to the board support package (BSP) performs all necessary
@@ -175,7 +191,6 @@ void app_main(void)
    *   sensor group descriptor, including number of supported sensors and
    *   the RTC clock calibration pulse length.
    */
-  vTaskDelay(pdMS_TO_TICKS(1000));
   chbsp_board_init(grp_ptr);
 
   ESP_LOGI("app_main", "    Hello Chirp! - Chirp SonicLib Example Application");
@@ -420,7 +435,6 @@ void app_main(void)
     if (taskflags == 0)
     {
       chbsp_proc_sleep();  // put processor in low-power sleep mode
-
       /* We only continue here after an interrupt wakes the processor */
     }
 
