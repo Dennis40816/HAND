@@ -18,7 +18,7 @@
  *   CS2: IO 39
  *   CS3: IO 37
  *   CS4: IO 35
- * 
+ *
  * @result should works
  */
 
@@ -96,7 +96,7 @@ void init_spi_device(spi_host_device_t host, int cs_pin,
   ESP_LOGI(TAG, "SPI device added to host %d with CS pin %d", host, cs_pin);
 }
 
-esp_err_t spi_read_byte(spi_device_handle_t handle, uint8_t reg, uint8_t* data)
+esp_err_t spi_read_word(spi_device_handle_t handle, uint8_t reg, uint8_t* data)
 {
   spi_transaction_t t = {0};
   uint8_t cmd[2] = {(reg | KX132_SPI_READ), KX132_DUMMY_BYTE};
@@ -138,8 +138,8 @@ void app_main(void)
 
   ESP_LOGI(TAG, "Try to read KX132 ID");
   uint8_t ID;
-  spi_read_byte(kx132_1, KX132_REG_WHO_AM_I, &ID);
-  spi_read_byte(kx132_2, KX132_REG_WHO_AM_I, &ID);
-  spi_read_byte(kx132_3, KX132_REG_WHO_AM_I, &ID);
-  spi_read_byte(kx132_4, KX132_REG_WHO_AM_I, &ID);
+  spi_read_word(kx132_1, KX132_REG_WHO_AM_I, &ID);
+  spi_read_word(kx132_2, KX132_REG_WHO_AM_I, &ID);
+  spi_read_word(kx132_3, KX132_REG_WHO_AM_I, &ID);
+  spi_read_word(kx132_4, KX132_REG_WHO_AM_I, &ID);
 }
