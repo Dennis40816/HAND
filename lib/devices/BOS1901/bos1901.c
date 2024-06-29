@@ -260,7 +260,7 @@ bos1901_err_t bos1901_device_write_reg(bos1901_dev_t *dev,
   /* assign address reg part */
   data |= (reg << address_reg_shift);
 
-  BOS_LOGV(TAG, "Send reset command: {0x%04X}", data);
+  BOS_LOGV(TAG, "Send write command: {0x%04X}", data);
 
   bos1901_err_t err = bos1901_spi_read_write_reg(dev, data, NULL);
 
@@ -324,7 +324,7 @@ bos1901_err_t bos1901_device_read_reg(bos1901_dev_t *dev,
   const int rst_mask = 0b1;             // 1 bit
   const int oe_mask = 0b1;              // 1 bit
   const int ds_mask = 0b1;              // 1 bit
-  const int play_mask = 0b11;           // 2 bits
+  const int play_mask = 0b111;          // 3 bits
 
   /* format read register data_tx from reg */
   uint16_t data_tx[2];
@@ -462,12 +462,12 @@ bos1901_err_t bos1901_device_output_enable(bos1901_dev_t *dev,
 
   if (ret != BOS1901_OK)
   {
-    BOS_LOGD(TAG, "Set bos1901 dev {%s} bos1901_device_output_enable failed!",
+    BOS_LOGE(TAG, "Set bos1901 dev {%s} bos1901_device_output_enable failed!",
              dev_name);
   }
   else
   {
-    BOS_LOGE(TAG, "Set bos1901 dev {%s} output {%s}", dev_name,
+    BOS_LOGW(TAG, "Set bos1901 dev {%s} output {%s}", dev_name,
              (new_status) ? "ENABLE" : "DISABLE");
   }
   return ret;
@@ -477,7 +477,7 @@ bos1901_err_t bos1901_device_reset(bos1901_dev_t *dev)
 {
   const char *dev_name = (dev->dev_name != NULL) ? dev->dev_name : "UNKNOWN";
 
-  uint16_t reset_cmd = 0x5100;  // or input 0x0100 is ok too
+  uint16_t reset_cmd = 0x5020;  // or input 0x0020 is ok too
   bos1901_err_t ret =
       bos1901_device_write_reg(dev, BOS1901_REG_CONFIG, reset_cmd);
 
@@ -545,12 +545,12 @@ bos1901_err_t bos1901_device_sense_enable(bos1901_dev_t *dev,
 
   if (ret != BOS1901_OK)
   {
-    BOS_LOGD(TAG, "Set bos1901 dev {%s} bos1901_device_sense_enable failed!",
+    BOS_LOGE(TAG, "Set bos1901 dev {%s} bos1901_device_sense_enable failed!",
              dev_name);
   }
   else
   {
-    BOS_LOGE(TAG, "Set bos1901 dev {%s} sense {%s}", dev_name,
+    BOS_LOGW(TAG, "Set bos1901 dev {%s} sense {%s}", dev_name,
              (new_status) ? "ENABLE" : "DISABLE");
   }
   return ret;
