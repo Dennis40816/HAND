@@ -215,7 +215,7 @@ extern "C"
    * @return `BOS1901_OK` on success or an appropriate error code.
    *
    * @warning Assume user won't use this function to modify private status field
-   *
+   * @example
    * Example usage:
    * \code
    * uint16_t data_tx[] = {0x1234, 0x5678};

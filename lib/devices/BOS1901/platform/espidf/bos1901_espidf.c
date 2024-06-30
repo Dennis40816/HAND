@@ -143,13 +143,15 @@ bos1901_err_t bos1901_espidf_read_write(bos1901_espidf_spi_dev_config_t *config,
 
   if (err == BOS1901_OK)
   {
-    // Convert received data from big-endian
-    for (uint32_t i = 0; i < length; i++)
+    if (data_rx != NULL)
     {
-      data_rx[i] = __builtin_bswap16(data_rx[i]);
+      // Convert received data from big-endian
+      for (uint32_t i = 0; i < length; i++)
+      {
+        data_rx[i] = __builtin_bswap16(data_rx[i]);
+      }
     }
   }
-
   return err;
 }
 
