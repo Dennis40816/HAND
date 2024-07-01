@@ -43,7 +43,7 @@ bos1901_dev_t *bos1901_device_3;
 #define BOS1901_TEST_DEVICE bos1901_device_1
 
 /* calculated waveform */
-uint16_t waveform[64];
+uint16_t waveform[40];
 
 /* Math helper */
 static int16_t volt_2_amp(float volt)
@@ -100,7 +100,7 @@ static void calculate_waveform(uint16_t *table, uint16_t *size, float v_max,
   {
     float tmp = (v_max - v_min) / 2 * cos((double)(theta0 * i + phase_shift)) +
                 (v_max + v_min) / 2;
-    ESP_LOGI(TAG, "%.3f", tmp);
+    // ESP_LOGI(TAG, "%.3f", tmp);
     table[i] = volt_2_amp(tmp);
   }
 
@@ -115,10 +115,11 @@ static void fill_fifo_to_bos1901_0_task(void *para)
   uint16_t waveform_size;
 
   // WARNING: must not exceed 60 V
-  calculate_waveform(waveform, &waveform_size, 60.0f, 20.0f, 125, 1);
+  calculate_waveform(waveform, &waveform_size, 60.0f, 10.0f, 200, 1);
 
   ESP_LOGI(TAG, "waveform_size is: %d", waveform_size);
 
+  static int part = 0;
   uint16_t ic_status = 0;
   uint16_t next_start_index = 0;
 
@@ -140,44 +141,46 @@ static void fill_fifo_to_bos1901_0_task(void *para)
 
         if (fifo_is_empty)
         {
-          // 寫入整個 waveform 到 FIFO
-          bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL,
-                                    waveform_size);
-          next_start_index = 0;  // 重置索引
+          // 傳送第一段
+          bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL, 40);
+          // part = 0;
         }
-        else if (fifo_is_full)
-        {
-          // FIFO 已滿，不需操作
-        }
-        else
-        {
-          // FIFO 有空間
-          uint16_t array_remain_sample = waveform_size - next_start_index;
+        // else if (part == 1 && fifo_space > 36)
+        // {
+        //   // 傳送第二段
+        //   bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform[64], NULL,
+        //                             36);
+        //   part = 1;
+        // }
+        // else
+        // {
+        //   // FIFO 有空間
+        //   uint16_t array_remain_sample = waveform_size - next_start_index;
 
-          if (array_remain_sample > fifo_space)
-          {
-            // 寫入 fifo_space bytes 到 FIFO
-            bos1901_device_read_write(BOS1901_TEST_DEVICE,
-                                      &waveform[next_start_index], NULL,
-                                      fifo_space);
-            next_start_index += fifo_space;  // 更新索引
-          }
-          else
-          {
-            // 寫入剩餘樣本到 FIFO
-            bos1901_device_read_write(BOS1901_TEST_DEVICE,
-                                      &waveform[next_start_index], NULL,
-                                      array_remain_sample);
-            next_start_index = 0;  // 重置索引
+        //   if (array_remain_sample > fifo_space)
+        //   {
+        //     // 寫入 fifo_space bytes 到 FIFO
+        //     bos1901_device_read_write(BOS1901_TEST_DEVICE,
+        //                               &waveform[next_start_index], NULL,
+        //                               fifo_space);
+        //     next_start_index += fifo_space;  // 更新索引
+        //   }
+        //   else
+        //   {
+        //     // 寫入剩餘樣本到 FIFO
+        //     bos1901_device_read_write(BOS1901_TEST_DEVICE,
+        //                               &waveform[next_start_index], NULL,
+        //                               array_remain_sample);
+        //     next_start_index = 0;  // 重置索引
 
-            // 如果還有剩餘空間，寫入剩餘 bytes
-            bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL,
-                                      fifo_space - array_remain_sample);
-            next_start_index += fifo_space - array_remain_sample;
-          }
-        }
+        //     // 如果還有剩餘空間，寫入剩餘 bytes
+        //     bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL,
+        //                               fifo_space - array_remain_sample);
+        //     next_start_index += fifo_space - array_remain_sample;
+        //   }
+        // }
         xSemaphoreGive(xMutex);
-        vTaskDelay(pdMS_TO_TICKS(4));
+        vTaskDelay(pdMS_TO_TICKS(1));
       }
     }
   }
@@ -344,7 +347,7 @@ static void configure_hand_bos1901_test()
            config_reg_val);
 
   // Modify KP config
-  const uint16_t SQ_FIELD_VAL = BOS1901_SQ_CONTINUOUS_WAVE;
+  const uint16_t SQ_FIELD_VAL = BOS1901_SQ_SQUARE_WAVE;
   const uint16_t SQ_FIELD_SHIFT = 11;
   const uint16_t SQ_FIELD_MASK_VALUE = 0b1;
   const uint16_t SQ_FIELD_MASK = SQ_FIELD_MASK_VALUE << SQ_FIELD_SHIFT;
