@@ -379,6 +379,11 @@ bos1901_err_t bos1901_device_read_write(bos1901_dev_t *dev, uint16_t *data_tx,
   BOS_LOGV(TAG, "Read-write from device {%s}, data length: %u words.", dev_name,
            (unsigned int)length);
 
+  if (length == 0)
+  {
+    return BOS1901_OK;
+  }
+
   bos1901_err_t err =
       bos1901_spi_device_read_write(dev, data_tx, data_rx, length);
 
