@@ -9,3 +9,7 @@ __pycache__/
 
 # log
 *.log
+
+# components
+managed_components
+dependencies.lock
