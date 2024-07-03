@@ -5,6 +5,37 @@
 - 在 platformio.ini 裡面透過 test_filter 指定目標
 - 接著使用開啟 `platform io CLI` 執行 `pio test -e hand_test -vv`
 
+## `test_rgb_led`
+
+- 測試 RGB LED 是否正常
+- 要求: 需要先完成對 hand_firmware 的建置(Full clean -> build),
+  確保出現資料夾 `managed_components\espressif__led_strip` 才能正確編譯
+
+## `test_bmi323_id`
+
+- 測試 FPC 板子上的 BMI323 是否通訊正常
+- 要求: 需要接上 HAND_FPC 板
+
+## `test_bos1901_id`
+
+- 測試主板上的 BOS1901 群組是否通訊正常
+- 要求: 無
+
+## `test_bq27427_id`
+
+- 測試主板上的 BQ27427 (Fuel Gauge) 是否通訊正常
+- 要求: 執行此測試前，請先接上電池以使 BQ27427 啟動，否則測試將失敗
+
+## `test_kx132_1211_id`
+
+- 測試 FPC 板子上的 KX132-1211 群組通訊是否正常
+- 要求: 需要接上 HAND_FPC 板
+
+## `test_vl53l1x_id`
+
+- 測試 FPC 板子上的 VL53L1X 群組通訊是否正常
+- 要求: 需要接上 HAND_FPC 板
+
 ## `test_wifi`
 
 - 執行 test_wifi 之前，需要先打開一個監聽 port `6020` 的 tcp server，測試資料夾中 `test/test_wifi` 已經有一個範例
