@@ -18,7 +18,7 @@ def display_log_level(env):
     for item in env.get("CPPDEFINES", []):
         if isinstance(item, tuple) and item[0] == "LOG_LOCAL_LEVEL":
             print(f"BOS1901 log level: {item[1]}")
-            time.sleep(0.5)
+            time.sleep(0.1)
             break
 
 def configure_src_filter(env, platform):
