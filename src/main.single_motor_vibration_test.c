@@ -40,13 +40,15 @@ bos1901_dev_t *bos1901_device_1;
 bos1901_dev_t *bos1901_device_2;
 bos1901_dev_t *bos1901_device_3;
 
-#define BOS1901_TEST_DEVICE bos1901_device_1
+#define BOS1901_TEST_DEVICE bos1901_device_0
 
-#define SINE_FREQ 200
-#define WAVEFORM_SIZE (8000/SINE_FREQ)
+#define SINE_FREQ      (200)
+#define WAVEFORM_SIZE  (8000 / SINE_FREQ)
+#define SPI_QUEUE_SIZE (100)
+#define SPI_SPEED_M    (30)
 
 /* calculated waveform */
-uint16_t waveform[WAVEFORM_SIZE];
+uint16_t waveform[WAVEFORM_SIZE + 1];
 
 /* Math helper */
 static int16_t volt_2_amp(float volt)
@@ -122,8 +124,8 @@ static void fill_fifo_to_bos1901_0_task(void *para)
 
   ESP_LOGI(TAG, "waveform_size is: %d", waveform_size);
 
-  uint16_t ic_status = 0;
-  uint16_t next_start_index = 0;
+  volatile uint16_t ic_status = 0;
+  volatile uint16_t next_start_index = 0;
 
   while (1)
   {
@@ -137,18 +139,46 @@ static void fill_fifo_to_bos1901_0_task(void *para)
                                 &ic_status);
 
         // 判斷 FIFO 是否為空或已滿
-        bool fifo_is_empty = ic_status & (1 << 6);
-        bool fifo_is_full = ic_status & (1 << 7);
-        uint16_t fifo_space = ic_status & 0b111111;
+        volatile bool fifo_is_empty = ic_status & (1 << 6);
+        volatile bool fifo_is_full = ic_status & (1 << 7);
+        volatile uint16_t fifo_space = ic_status & 0b111111;
 
         if (fifo_is_empty)
         {
           // 傳送第一段
-          bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL, WAVEFORM_SIZE);
+          uint32_t len = WAVEFORM_SIZE > 64 ? 64 : WAVEFORM_SIZE;
+          bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL, len);
+          if (WAVEFORM_SIZE > 64)
+          {
+            next_start_index = 64;
+          }
+        }
+        else if (fifo_is_full)
+        {
+          // wait fifo
+          // 就算沒有這個也不行，所以不是這個的問題
         }
         else
         {
-          // FIFO 有空間
+          // 本版本對於 125Hz 以上運作良好，如果接上電腦沒辦法震動，大概率是
+          // power 不夠，請直接用接頭接到牆上，但對於低於 125 Hz 存在 bug。
+
+          // FIXME: 問題應該在這下面，待修正:
+          // 推測可能是某種操作導致 BOS1901 無法正確接收傳入 FIFO
+          // 的值，因為當一開始設定成 100 Hz(有 bug)後換成
+          // 125Hz，是無法震動的，但重新上電(reset
+          // bos1901)後就可以震動，因此推測 BOS1901 在 125Hz
+          // 因不明原因可能被寫壞掉了。
+
+          // - 重讀數據手冊
+          // - 可以寫一個模擬器來模擬任意的 FIFO 回傳值，確認該 function
+          // 不存在問題
+          // - 要用 LA 分析 SPI
+          // - 可以讀取看看錯誤 register
+          // - 可以減少寫入數量，不一定要寫滿
+          // - 更多請查看 BOS1901 馬達測試 notion
+
+          // - 內部時鐘的問題嗎?
           uint16_t array_remain_sample = waveform_size - next_start_index;
 
           if (array_remain_sample > fifo_space)
@@ -175,6 +205,7 @@ static void fill_fifo_to_bos1901_0_task(void *para)
             next_start_index += rest_space;
           }
         }
+
         xSemaphoreGive(xMutex);
         vTaskDelay(pdMS_TO_TICKS(1));
       }
@@ -218,31 +249,31 @@ static void init_spi()
   init_spi_bus();
 
   spi_device_interface_config_t devcfg0 = {
-      .clock_speed_hz = 35 * 1000 * 1000,
+      .clock_speed_hz = SPI_SPEED_M * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS0,
-      .queue_size = 5,
+      .queue_size = SPI_QUEUE_SIZE,
   };
 
   spi_device_interface_config_t devcfg1 = {
-      .clock_speed_hz = 35 * 1000 * 1000,
+      .clock_speed_hz = SPI_SPEED_M * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS1,
-      .queue_size = 5,
+      .queue_size = SPI_QUEUE_SIZE,
   };
 
   spi_device_interface_config_t devcfg2 = {
-      .clock_speed_hz = 35 * 1000 * 1000,
+      .clock_speed_hz = SPI_SPEED_M * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS2,
-      .queue_size = 5,
+      .queue_size = SPI_QUEUE_SIZE,
   };
 
   spi_device_interface_config_t devcfg3 = {
-      .clock_speed_hz = 35 * 1000 * 1000,
+      .clock_speed_hz = SPI_SPEED_M * 1000 * 1000,
       .mode = 0,
       .spics_io_num = PIN_NUM_CS3,
-      .queue_size = 5,
+      .queue_size = SPI_QUEUE_SIZE,
   };
 
   init_bos1901_device(&bos1901_device_0, "BOS1901_Device_0", &spi_handle_0,
