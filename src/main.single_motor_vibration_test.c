@@ -42,8 +42,11 @@ bos1901_dev_t *bos1901_device_3;
 
 #define BOS1901_TEST_DEVICE bos1901_device_1
 
+#define SINE_FREQ 200
+#define WAVEFORM_SIZE (8000/SINE_FREQ)
+
 /* calculated waveform */
-uint16_t waveform[40];
+uint16_t waveform[WAVEFORM_SIZE];
 
 /* Math helper */
 static int16_t volt_2_amp(float volt)
@@ -115,11 +118,10 @@ static void fill_fifo_to_bos1901_0_task(void *para)
   uint16_t waveform_size;
 
   // WARNING: must not exceed 60 V
-  calculate_waveform(waveform, &waveform_size, 60.0f, 10.0f, 200, 1);
+  calculate_waveform(waveform, &waveform_size, 60.0f, 10.0f, SINE_FREQ, 1);
 
   ESP_LOGI(TAG, "waveform_size is: %d", waveform_size);
 
-  static int part = 0;
   uint16_t ic_status = 0;
   uint16_t next_start_index = 0;
 
@@ -142,43 +144,37 @@ static void fill_fifo_to_bos1901_0_task(void *para)
         if (fifo_is_empty)
         {
           // 傳送第一段
-          bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL, 40);
-          // part = 0;
+          bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL, WAVEFORM_SIZE);
         }
-        // else if (part == 1 && fifo_space > 36)
-        // {
-        //   // 傳送第二段
-        //   bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform[64], NULL,
-        //                             36);
-        //   part = 1;
-        // }
-        // else
-        // {
-        //   // FIFO 有空間
-        //   uint16_t array_remain_sample = waveform_size - next_start_index;
+        else
+        {
+          // FIFO 有空間
+          uint16_t array_remain_sample = waveform_size - next_start_index;
 
-        //   if (array_remain_sample > fifo_space)
-        //   {
-        //     // 寫入 fifo_space bytes 到 FIFO
-        //     bos1901_device_read_write(BOS1901_TEST_DEVICE,
-        //                               &waveform[next_start_index], NULL,
-        //                               fifo_space);
-        //     next_start_index += fifo_space;  // 更新索引
-        //   }
-        //   else
-        //   {
-        //     // 寫入剩餘樣本到 FIFO
-        //     bos1901_device_read_write(BOS1901_TEST_DEVICE,
-        //                               &waveform[next_start_index], NULL,
-        //                               array_remain_sample);
-        //     next_start_index = 0;  // 重置索引
+          if (array_remain_sample > fifo_space)
+          {
+            // 寫入 fifo_space bytes 到 FIFO
+            bos1901_device_read_write(BOS1901_TEST_DEVICE,
+                                      &waveform[next_start_index], NULL,
+                                      fifo_space);
+            next_start_index += fifo_space;  // 更新索引
+          }
+          else
+          {
+            // 寫入剩餘樣本到 FIFO
+            bos1901_device_read_write(BOS1901_TEST_DEVICE,
+                                      &waveform[next_start_index], NULL,
+                                      array_remain_sample);
+            next_start_index = 0;  // 重置索引
 
-        //     // 如果還有剩餘空間，寫入剩餘 bytes
-        //     bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL,
-        //                               fifo_space - array_remain_sample);
-        //     next_start_index += fifo_space - array_remain_sample;
-        //   }
-        // }
+            uint16_t rest_space = fifo_space - array_remain_sample;
+
+            // 如果還有剩餘空間，寫入剩餘 bytes
+            bos1901_device_read_write(BOS1901_TEST_DEVICE, waveform, NULL,
+                                      rest_space);
+            next_start_index += rest_space;
+          }
+        }
         xSemaphoreGive(xMutex);
         vTaskDelay(pdMS_TO_TICKS(1));
       }
