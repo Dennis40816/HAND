@@ -169,7 +169,7 @@ static void i2c_master0_init()
 
 void app_main(void)
 {
-  esp_log_level_set("*", ESP_LOG_DEBUG);
+  esp_log_level_set("*", ESP_LOG_INFO);
   ch_group_t *grp_ptr = &chirp_group;
   uint8_t chirp_error = 0;
   uint8_t num_ports;
@@ -192,6 +192,8 @@ void app_main(void)
    *   the RTC clock calibration pulse length.
    */
   chbsp_board_init(grp_ptr);
+
+  vTaskDelay(pdMS_TO_TICKS(3000));
 
   ESP_LOGI("app_main", "    Hello Chirp! - Chirp SonicLib Example Application");
   ESP_LOGI("app_main", "    Compile time:  %s %s", __DATE__, __TIME__);

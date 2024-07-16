@@ -18,8 +18,11 @@
 
 #define WIFI_SSID     "CHT061975"
 #define WIFI_PASS     "24577079"
+// #define WIFI_SSID     "602lab"
+// #define WIFI_PASS     "602mems206"
 #define MAX_RETRY     5
 #define UDP_PORT      12345
+// #define UDP_SERVER_IP "192.168.0.170"
 #define UDP_SERVER_IP "192.168.1.17"
 
 static EventGroupHandle_t s_wifi_event_group;

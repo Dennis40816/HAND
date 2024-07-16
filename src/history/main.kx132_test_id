@@ -142,4 +142,6 @@ void app_main(void)
   spi_read_word(kx132_2, KX132_REG_WHO_AM_I, &ID);
   spi_read_word(kx132_3, KX132_REG_WHO_AM_I, &ID);
   spi_read_word(kx132_4, KX132_REG_WHO_AM_I, &ID);
+
+  ESP_LOGW(TAG, "Note that reading result from [0x3D] should be '0x13'");
 }
