@@ -52,3 +52,21 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
   - use pip to install `termcolor`
 
 - Put an `extra_script.py` in lib folder to change `pio's src_filter`
+
+## How to get build logs
+
+- In powershell, do the following instruction
+
+  ```ps1
+  pio run -e hand_firmware -vv 2>&1 | Tee-Object -FilePath <log-name>
+  ```
+
+## Notes on Writing `extra_script.py` in the Library
+
+- In the library, ensure that all required files (including `.c` files) have their parent folders included in either: 
+  1. The `build` flags in `library.json` (`-I` flags)
+  2. Using `env.Append(CPPPATH=[absolute_path])` in `extra_script.py`
+
+  Choose one of these methods. If dynamic adjustments are needed (e.g., through platformio.ini `build_flags`), it can be implemented in `extra_script.py`. For an example, refer to VL53L1X.
+
+- Ensure that `src` is not used as the top-level folder name in the library. If `src` must be used as the top-level folder, ensure that it contains only `src` and `inc` folders. Adding other folders and referencing them from `src` can lead to compilation errors (e.g., undefined reference error). For an example, see the VL53L1X library; changing the `source` to `src` can cause compilation errors.

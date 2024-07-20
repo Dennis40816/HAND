@@ -1,34 +1,21 @@
-Most of the functionality of this library is based on the VL53L1X API provided
-provided by ST (STSW-IMG007), and some of the explanatory comments are quoted
-or paraphrased from the API source code, API user manual (UM2356), and VL53L1X
-datasheet. Therefore, the license terms for the API source code (BSD 3-clause
-"New" or "Revised" License) also apply to this derivative work, as specified
-below.
+BSD 3-Clause License
 
-For more information, see
-
-https://www.pololu.com/
-https://forum.pololu.com/
-
---------------------------------------------------------------------------------
-
-Copyright (c) 2017, STMicroelectronics
-Copyright (c) 2018-2022, Pololu Corporation
-All Rights Reserved
+Copyright (c) 2018, Kazumoto Kojima
+Copyright (c) 2024, Dennis Liu
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-list of conditions and the following disclaimer.
+   list of conditions and the following disclaimer.
 
 2. Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
 
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE

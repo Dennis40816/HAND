@@ -124,4 +124,6 @@ void app_main(void)
   vl53l1x_read_register(VL_MODULE_TYPE_INDEX);
   vl53l1x_read_register(VL_MASK_REVISION_INDEX);
   tca6408a_set_pin_low(&tca6408a, VL_XSHUT_2_PIN);
+
+  ESP_LOGW(TAG, "Correct value should be: \n{0x010F}: 0xEA\n{0x0110}: 0xCC\n{0x0111}: 0x10");
 }

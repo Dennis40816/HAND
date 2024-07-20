@@ -2,12 +2,17 @@
   "name": "VL53L1X",
   "version": "1.3.1",
   "description": "VL53L1X driver",
-  "keywords": ["VL53L1X", "driver", "I2C"],
-  "license": "BSD-3-Clause",
+  "keywords": [
+    "VL53L1X",
+    "driver",
+    "I2C"
+  ],
+  "license": "BSD 3-Clause License",
   "authors": [
     {
-      "name": "Pololu Corporation",
-      "email": "support@pololu.com"
+      "name": "Kazumoto Kojima",
+      "email": "",
+      "url": "https://github.com/kazkojima/esp32-vl53l1x-test.git"
     },
     {
       "name": "Dennis Liu",
@@ -15,8 +20,15 @@
     }
   ],
   "frameworks": "espidf",
-  "platforms": ["espressif32"],
+  "platforms": [
+    "espressif32"
+  ],
   "build": {
+    "flags": [
+      "-I source",
+      "-I st/inc",
+      "-I st/src"
+    ],
     "extraScript": "extra_script.py"
   }
 }
