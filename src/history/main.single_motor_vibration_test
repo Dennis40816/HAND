@@ -105,7 +105,7 @@ static void calculate_waveform(uint16_t *table, uint16_t *size, float v_max,
   {
     float tmp = (v_max - v_min) / 2 * cos((double)(theta0 * i + phase_shift)) +
                 (v_max + v_min) / 2;
-    // ESP_LOGI(TAG, "%.3f", tmp);
+    ESP_LOGI(TAG, "%.3f, %04X", tmp, volt_2_amp(tmp));
     table[i] = volt_2_amp(tmp);
   }
 
