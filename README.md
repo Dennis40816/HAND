@@ -70,3 +70,5 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
   Choose one of these methods. If dynamic adjustments are needed (e.g., through platformio.ini `build_flags`), it can be implemented in `extra_script.py`. For an example, refer to VL53L1X.
 
 - Ensure that `src` is not used as the top-level folder name in the library. If `src` must be used as the top-level folder, ensure that it contains only `src` and `inc` folders. Adding other folders and referencing them from `src` can lead to compilation errors (e.g., undefined reference error). For an example, see the VL53L1X library; changing the `source` to `src` can cause compilation errors.
+
+- srcFilter 的功能是決定要不要讓該資料夾裡面的內容進行編譯(推測是產生 .o)，而 -I 則決定其他文件是否在 include 階段能夠看見該文件。因此兩者都需要在 extra_script.py 進行配置(詳見 VL53L1X Lib)

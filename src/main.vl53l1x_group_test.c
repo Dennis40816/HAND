@@ -24,7 +24,6 @@
 #include "driver/i2c.h"
 
 #include "vl53l1x.h"
-#include "vl53l1x_bsp_espidf_hand.h"
 
 /* macros */
 #define VL53L1X_1_INDEX    1
@@ -126,7 +125,9 @@ static void vl53l1x_change_i2c_address()
   VL53L1X_SetI2CAddress(&vl53l1x_2, VL53L1X_2_NEW_I2C_ADDRESS);
 }
 
-void vl53l1x_init(VL53L1_DEV dev) { /*  */ }
+void vl53l1x_init(VL53L1_DEV dev) {
+
+}
 
 void app_main(void)
 {

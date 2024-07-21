@@ -63,9 +63,13 @@ def configure_src_filter(env, platform, board):
     
     if board and platform:  # Only include bsp if both platform and board are specified
         src_filter.append(f"+<bsp/{board}/>")
+        
+        ## add self defind if needed
+        # bsp_macro = f"LIB_USE_BSP_{board.upper()}"
+        # env.Append(CPPDEFINES=[bsp_macro])
 
     # Apply the source filter to the environment
-    # env.Replace(SRC_FILTER=src_filter)
+    env.Replace(SRC_FILTER=src_filter)
 
     # Get the project root and relative path
     proj_root = projenv["PROJECT_DIR"]
