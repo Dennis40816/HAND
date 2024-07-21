@@ -13,3 +13,6 @@ __pycache__/
 # components
 managed_components
 dependencies.lock
+
+# settings.json
+.vscode/settings.json
