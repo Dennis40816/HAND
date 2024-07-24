@@ -33,7 +33,7 @@ static int s_retry_num = 0;
 #define WIFI_FAIL_BIT      BIT1
 
 static int udp_sock;
-static struct sockaddr_in dest_addr;
+static struct sockaddr_in _dest_addr;
 
 static SemaphoreHandle_t log_set_flag = NULL;
 
@@ -43,10 +43,10 @@ static void udp_receive_task(void* pvParameters)
     int addr_family = AF_INET;
     int ip_protocol = IPPROTO_IP;
 
-    dest_addr.sin_addr.s_addr = inet_addr(UDP_SERVER_IP);
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(UDP_PORT);
-    inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
+    _dest_addr.sin_addr.s_addr = inet_addr(UDP_SERVER_IP);
+    _dest_addr.sin_family = AF_INET;
+    _dest_addr.sin_port = htons(UDP_PORT);
+    inet_ntoa_r(_dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
     udp_sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
     if (udp_sock < 0)
@@ -163,7 +163,7 @@ static int custom_log_handler_vprintf(const char* format, va_list args)
     int len = vsnprintf(log_buffer, sizeof(log_buffer), format, args);
     if (len > 0)
     {
-        sendto(udp_sock, log_buffer, len, 0, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
+        sendto(udp_sock, log_buffer, len, 0, (struct sockaddr*)&_dest_addr, sizeof(_dest_addr));
     }
 
     // See: https://github.com/espressif/esp-idf/issues/9366
