@@ -159,10 +159,13 @@ static void vl53l1x_change_i2c_address()
 
   /* change VL53L1X_1 i2c address to 0x60 */
   VL53L1_GpioXshutdown(VL53L1X_1_INDEX, VL53L1X_XSHUT_HIGH);
+  VL53L1_WaitDeviceBooted(&vl53l1x_1);
   VL53L1X_SetI2CAddress(&vl53l1x_1, VL53L1X_1_NEW_I2C_ADDRESS);
 
   /* change VL53L1X_2 i2c address to 0x62 */
+
   VL53L1_GpioXshutdown(VL53L1X_2_INDEX, VL53L1X_XSHUT_HIGH);
+  VL53L1_WaitDeviceBooted(&vl53l1x_2);
   VL53L1X_SetI2CAddress(&vl53l1x_2, VL53L1X_2_NEW_I2C_ADDRESS);
 }
 
@@ -239,8 +242,13 @@ static void vl53l1x_init(VL53L1_DEV dev, bool calibration_en)
 
 void app_main(void)
 {
-  esp_log_level_set("*", ESP_LOG_DEBUG);
-  vTaskDelay(pdMS_TO_TICKS(3000));
+  hand_init();
+
+  /* XXX: Do not call "*", it will cause Wi-Fi crash */
+  // D (123100) esp_netif_lwip: esp_netif_ip_lost_timer esp_netif:0x3fcab3f8
+  // D (123100) esp_netif_lwip: if0x3fcab3f8 ip lost tmr: no need raise ip lost
+
+  // event esp_log_level_set("*", ESP_LOG_DEBUG);
 
   i2c_bus_init();
 
