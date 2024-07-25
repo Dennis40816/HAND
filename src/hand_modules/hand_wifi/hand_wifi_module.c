@@ -116,6 +116,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
       {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR "\n", IP2STR(&event->ip_info.ip));
+        xEventGroupSetBits(_hand_wifi_internal_handle->wifi_event_group,
+                           HAND_WIFI_GOT_IP_BIT);
       }
     }
   }
@@ -286,10 +288,10 @@ esp_err_t hand_wifi_module_init(hand_wifi_handle_t handle,
     /* Note: will not clear set bit when exit */
     EventBits_t bits = xEventGroupWaitBits(
         _hand_wifi_internal_handle->wifi_event_group,
-        HAND_WIFI_CONNECTED_BIT | HAND_WIFI_CONNECT_FAIL_BIT, pdFALSE, pdFALSE,
+        HAND_WIFI_GOT_IP_BIT | HAND_WIFI_CONNECT_FAIL_BIT, pdFALSE, pdFALSE,
         portMAX_DELAY);
 
-    if (bits & HAND_WIFI_CONNECTED_BIT)
+    if (bits & HAND_WIFI_GOT_IP_BIT)
     {
       ESP_LOGI(TAG, "Wi-Fi already connects");
     }

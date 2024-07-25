@@ -44,6 +44,7 @@
 /* hand wifi event group bit definition */
 #define HAND_WIFI_CONNECTED_BIT    (BIT0)
 #define HAND_WIFI_CONNECT_FAIL_BIT (BIT1)
+#define HAND_WIFI_GOT_IP_BIT       (BIT2)
 
 /* Public struct */
 typedef struct hand_wifi_config_t
@@ -77,6 +78,8 @@ typedef struct hand_wifi_t
    * - BIT0: HAND_WIFI_CONNECTED_BIT
    * @note
    * - BIT1: HAND_WIFI_FAIL_BIT
+   * @note
+   * - BIT2: HAND_WIFI_GOT_IP_BIT
    *
    * @warning Currently, only allow user to use heap allocate
    * (xEventGroupCreate)
