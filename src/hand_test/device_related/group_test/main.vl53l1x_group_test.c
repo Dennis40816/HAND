@@ -109,6 +109,7 @@ static void collect_data(void* arg)
             TAG,
             "Status of `VL53L1_ClearInterruptAndStartMeasurement` is: {%d}",
             status);
+        /* TODO: need to handle this */
       }
     }
 
@@ -129,6 +130,7 @@ static void collect_data(void* arg)
             TAG,
             "Status of `VL53L1_ClearInterruptAndStartMeasurement` is: {%d}",
             status);
+        /* TODO: need to handle this */
       }
     }
   }

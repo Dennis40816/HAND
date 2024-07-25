@@ -63,7 +63,7 @@
 
 /* const static variables */
 
-static enum static_constexpr_alternative{
+static enum static_constexpr_alternative {
   INDEX_LEN = 2,
   BYTE_LEN = 1,
   WORD_LEN = 2,
@@ -83,6 +83,7 @@ static esp_err_t _I2CWrite(VL53L1_DEV Dev, uint8_t *buf, uint32_t len)
   i2c_master_stop(cmd);
   esp_err_t ret =
       i2c_master_cmd_begin(Dev->I2cHandle, cmd, pdMS_TO_TICKS(1000));
+  ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
   i2c_cmd_link_delete(cmd);
   if (ret != ESP_OK)
   {
@@ -104,6 +105,7 @@ static esp_err_t _I2CRead(VL53L1_DEV Dev, uint8_t *buf, uint32_t len)
   i2c_master_stop(cmd);
   esp_err_t ret =
       i2c_master_cmd_begin(Dev->I2cHandle, cmd, pdMS_TO_TICKS(1000));
+  ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
   i2c_cmd_link_delete(cmd);
   return ret;
 }
@@ -134,6 +136,7 @@ __attribute__((weak)) VL53L1_Error VL53L1_WriteMulti(VL53L1_DEV Dev,
 
   esp_err_t ret =
       i2c_master_cmd_begin(Dev->I2cHandle, cmd, pdMS_TO_TICKS(1000));
+  ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
   i2c_cmd_link_delete(cmd);
 
   VL53L1_PutI2cBus();
