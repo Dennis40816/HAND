@@ -203,7 +203,7 @@ static void hand_terminal_recv_task(void* parameter)
     }
     else if (rc == 0)
     {
-      ESP_LOGI(TAG, "Select timeout, no data received");
+      ESP_LOGD(TAG, "Select timeout, no data received");
     }
     else
     {
