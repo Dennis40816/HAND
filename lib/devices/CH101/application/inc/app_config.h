@@ -89,7 +89,7 @@
  * 	 CHIRP_OTHER_SENSOR_MODE to CH_MODE_TRIGGERED_RX_ONLY.
  */
 #define CHIRP_FIRST_SENSOR_MODE		CH_MODE_TRIGGERED_TX_RX
-#define CHIRP_OTHER_SENSOR_MODE		CH_MODE_TRIGGERED_RX_ONLY
+#define CHIRP_OTHER_SENSOR_MODE		CH_MODE_TRIGGERED_TX_RX
 
 /* Maximum detection range for the sensor
  * This value will determine how long the sensor "listens" for an ultrasound 

@@ -525,7 +525,11 @@ static void sensor_int_callback(ch_group_t *grp_ptr, uint8_t dev_num)
      */
     if (ch_get_mode(dev_ptr) == CH_MODE_FREERUN)
     {
-      chbsp_set_io_dir_in(dev_ptr);  // set INT line as input
+      /* Clear IO here because we are use TXB0104 */
+      chbsp_group_set_io_dir_out(grp_ptr);
+      chbsp_group_io_clear(grp_ptr);
+      chbsp_group_set_io_dir_in(grp_ptr);  // set INT line as input
+      chbsp_delay_us(CHDRV_TRIGGER_PULSE_US);
       chbsp_group_io_interrupt_enable(grp_ptr);
     }
     else

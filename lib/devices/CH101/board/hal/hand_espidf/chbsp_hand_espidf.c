@@ -52,14 +52,7 @@ ch_group_t* sensor_group_ptr;
 
 /* Parameter storage for sensors*/
 // io index starts from 0
-ch_io_int_callback_parameter_t ch_io_it_cb_para1 = {.grp_ptr = NULL,
-                                                    .io_index = 0};
-ch_io_int_callback_parameter_t ch_io_it_cb_para2 = {.grp_ptr = NULL,
-                                                    .io_index = 1};
-ch_io_int_callback_parameter_t ch_io_it_cb_para3 = {.grp_ptr = NULL,
-                                                    .io_index = 2};
-ch_io_int_callback_parameter_t ch_io_it_cb_para4 = {.grp_ptr = NULL,
-                                                    .io_index = 3};
+static ch_io_int_callback_parameter_t ch_io_it_cb_para[CHIRP_MAX_NUM_SENSORS];
 
 /* TCA6408A settings */
 const tca6408a_dev_t tca6408a_config = {.address = CHIRP_TCA6408A_ADDRESS,
@@ -861,6 +854,8 @@ void chbsp_group_pin_init(ch_group_t* grp_ptr)
   ioport_set_pin_dir(CHIRP_RESET_3, GPIO_MODE_OUTPUT);  // RESET_3=output
   ioport_set_pin_dir(CHIRP_RESET_4, GPIO_MODE_OUTPUT);  // RESET_4=output
 
+  /* TODO: set led if needed */
+
   chbsp_reset_assert();
 
   for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++)
@@ -883,22 +878,16 @@ void chbsp_group_pin_init(ch_group_t* grp_ptr)
   /* Note: gpio_install_isr_service() already called in ext_int_init() */
   /* Note: do not create ch_io_it_cb_para0 in this function, which leads to pass
    * stack-allocated pointers to ISRs problem */
-  /* create a callback for sensor 0 */
-  /* Note: io_index is already set */
-  ch_io_it_cb_para1.grp_ptr = grp_ptr;  // update grp_ptr
-  ch_io_it_cb_para2.grp_ptr = grp_ptr;  // update grp_ptr
-  ch_io_it_cb_para3.grp_ptr = grp_ptr;  // update grp_ptr
-  ch_io_it_cb_para4.grp_ptr = grp_ptr;  // update grp_ptr
 
-  /* add isr handler */
-  gpio_isr_handler_add(CHIRP_INT_1, chirp_isr_callback,
-                       (void*)&ch_io_it_cb_para1);
-  gpio_isr_handler_add(CHIRP_INT_2, chirp_isr_callback,
-                       (void*)&ch_io_it_cb_para2);
-  gpio_isr_handler_add(CHIRP_INT_3, chirp_isr_callback,
-                       (void*)&ch_io_it_cb_para3);
-  gpio_isr_handler_add(CHIRP_INT_4, chirp_isr_callback,
-                       (void*)&ch_io_it_cb_para4);
+  for (int i = 0; i < CHIRP_USE_NUM_SENSORS; ++i)
+  {
+    ch_io_it_cb_para[i].grp_ptr = grp_ptr;
+    ch_io_it_cb_para[i].io_index = i;
+
+    // add handler for used chx01
+    gpio_isr_handler_add(chirp_pin_io[i], chirp_isr_callback,
+                         (void*)&ch_io_it_cb_para[i]);
+  }
 
   ESP_LOGD("chbsp_group_pin_init", "GPIO ISR handler added!");
 }
