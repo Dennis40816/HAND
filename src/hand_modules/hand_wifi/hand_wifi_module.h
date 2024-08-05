@@ -31,6 +31,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 
+/* TODO: make this can be overwritten by macro (ifndef) */
+
 /* Public define */
 #define HAND_WIFI_MODULE_DEFAULT_SSID      ("CHT061975")
 #define HAND_WIFI_MODULE_DEFAULT_PASSWORD  ("24577079")
