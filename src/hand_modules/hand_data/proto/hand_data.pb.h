@@ -195,19 +195,19 @@ X(a, STATIC,   SINGULAR, UENUM,    data_type,         2) \
 X(a, STATIC,   SINGULAR, UINT32,   data_count,        3) \
 X(a, STATIC,   OPTIONAL, INT64,    timestamp,         4) \
 X(a, CALLBACK, REPEATED, INT64,    timestamps,        5) \
-X(a, CALLBACK, REPEATED, BYTES,    data,              6)
+X(a, CALLBACK, SINGULAR, BYTES,    data,              6)
 #define HandDataMsg_CALLBACK pb_default_field_callback
 #define HandDataMsg_DEFAULT NULL
 
 #define HandConfigMsg_FIELDLIST(X, a) \
 X(a, CALLBACK, REPEATED, UENUM,    target,            1) \
-X(a, CALLBACK, REPEATED, BYTES,    config,            2)
+X(a, CALLBACK, SINGULAR, BYTES,    config,            2)
 #define HandConfigMsg_CALLBACK pb_default_field_callback
 #define HandConfigMsg_DEFAULT NULL
 
 #define HandCmdMsg_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UENUM,    target,            1) \
-X(a, CALLBACK, REPEATED, BYTES,    cmd,               2)
+X(a, CALLBACK, SINGULAR, BYTES,    cmd,               2)
 #define HandCmdMsg_CALLBACK pb_default_field_callback
 #define HandCmdMsg_DEFAULT NULL
 

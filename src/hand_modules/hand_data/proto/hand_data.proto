@@ -65,19 +65,19 @@ message HandDataMsg {
   uint32 data_count = 3;  // number of data elements, not byte length
   optional int64 timestamp = 4;
   repeated int64 timestamps = 5;
-  repeated bytes data = 6;
+  bytes data = 6;
 }
 
 message HandConfigMsg
 {
   repeated HandChipInstance target = 1;
-  repeated bytes config = 2;
+  bytes config = 2;
 }
 
 message HandCmdMsg
 {
   HandChipInstance target = 1;
-  repeated bytes cmd = 2;
+  bytes cmd = 2;
 }
 
 // Wrapper messages
