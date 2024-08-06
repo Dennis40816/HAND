@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+/* VERSION: 0.1 */
+
+enum HandMsgDirection {
+  FROM_HAND = 0;
+  TO_HAND = 1;
+}
+
+enum HandMainMsgType {
+  CONFIG = 0;
+  DATA = 1;
+  CMD = 2;  // which requires target to perform operations
+
+  // SYSTEM LOG uses pure string via UDP
+}
+
+enum HandChipType {
+  ESP32_S3_MINI = 0;
+  BQ27427 = 1;
+  KX132_1211 = 2;
+  VL53L1X = 3;
+  CH101 = 4;
+  BOS1901 = 5;
+  BMI323 = 6;
+  TCA6408A = 7;
+}
+
+enum HandChipInstance {
+  ESP32_S3_MINI_MAIN = 0;
+  BQ27427_BATTERY = 1;
+  KX132_1211_SENSOR1 = 2;
+  KX132_1211_SENSOR2 = 3;
+  KX132_1211_SENSOR3 = 4;
+  KX132_1211_SENSOR4 = 5;
+  VL53L1X_SENSOR1 = 6;
+  VL53L1X_SENSOR2 = 7;
+  CH101_SENSOR1 = 8;
+  CH101_SENSOR2 = 9;
+  CH101_SENSOR3 = 10;
+  CH101_SENSOR4 = 11;
+  BOS1901_ACTUATOR1 = 12;
+  BOS1901_ACTUATOR2 = 13;
+  BOS1901_ACTUATOR3 = 14;
+  BOS1901_ACTUATOR4 = 15;
+  BMI323_IMU = 16;
+  TCA6408A_CH101 = 17;
+  TCA6408A_OTHER = 18;
+}
+
+/* how we parse HandDataMsg.data array */
+enum HandDataType
+{
+  UINT8 = 0;
+  UINT16 = 1;
+  INT32 = 2;
+  INT64 = 3;
+  FLOAT = 4;
+  DOUBLE = 5;
+}
+
+message HandDataMsg {
+  HandChipInstance source = 1;
+  HandDataType data_type = 2;
+  uint32 data_count = 3;  // number of data elements, not byte length
+  optional int64 timestamp = 4;
+  repeated int64 timestamps = 5;
+  repeated bytes data = 6;
+}
+
+message HandConfigMsg
+{
+  repeated HandChipInstance target = 1;
+  repeated bytes config = 2;
+}
+
+message HandCmdMsg
+{
+  HandChipInstance target = 1;
+  repeated bytes cmd = 2;
+}
+
+// Wrapper messages
+message HandDataWrapper {
+  repeated HandDataMsg data_msgs = 1;
+}
+
+message HandConfigWrapper {
+  repeated HandConfigMsg config_msgs = 1;
+}
+
+message HandCmdWrapper {
+  repeated HandCmdMsg cmd_msgs = 1;
+}
+
+message HandMsg {
+  HandMsgDirection direction = 1;
+  HandMainMsgType msg_type = 2;
+  HandChipType chip_type = 3;
+  oneof content {
+    HandDataWrapper data_wrapper = 4;
+    HandConfigWrapper config_wrapper = 5;
+    HandCmdWrapper cmd_wrapper = 6;
+  }
+}
