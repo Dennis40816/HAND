@@ -1,0 +1,9 @@
+#include "hand_common.h"
+
+void app_main(void)
+{
+  hand_init();
+
+  /* Do something else here */
+}
+
