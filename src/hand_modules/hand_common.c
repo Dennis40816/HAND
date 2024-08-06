@@ -24,6 +24,10 @@
 #include "hand_wifi/hand_wifi_module.h"
 #include "hand_terminal/hand_terminal_module.h"
 
+#ifndef HAND_DEFAULT_LOG_SERVER_IP 
+#define HAND_DEFAULT_LOG_SERVER_IP "192.168.1.17"
+#endif
+
 static const char* TAG = "HAND_COMMON";
 
 esp_err_t hand_init()
@@ -58,7 +62,7 @@ esp_err_t hand_init()
                        .fcntl_flag = O_NONBLOCK,
                        .addr_family = HAND_AF_INET,
                        .addr = {.port = 12345}},
-      .dest_addr = {.ip = "192.168.1.17", .port = 12345}};
+      .dest_addr = {.ip = HAND_DEFAULT_LOG_SERVER_IP, .port = 12345}};
 
   ret = hand_terminal_module_mount(NULL);
   /* TODO: add return path */

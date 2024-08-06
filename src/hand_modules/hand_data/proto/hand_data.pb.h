@@ -99,6 +99,7 @@ typedef struct _HandCmdWrapper {
 } HandCmdWrapper;
 
 typedef struct _HandMsg {
+    uint32_t bytes_count;
     HandMsgDirection direction;
     HandMainMsgType msg_type;
     HandChipType chip_type;
@@ -158,14 +159,14 @@ extern "C" {
 #define HandDataWrapper_init_default             {{{NULL}, NULL}}
 #define HandConfigWrapper_init_default           {{{NULL}, NULL}}
 #define HandCmdWrapper_init_default              {{{NULL}, NULL}}
-#define HandMsg_init_default                     {_HandMsgDirection_MIN, _HandMainMsgType_MIN, _HandChipType_MIN, 0, {HandDataWrapper_init_default}}
+#define HandMsg_init_default                     {0, _HandMsgDirection_MIN, _HandMainMsgType_MIN, _HandChipType_MIN, 0, {HandDataWrapper_init_default}}
 #define HandDataMsg_init_zero                    {_HandChipInstance_MIN, _HandDataType_MIN, 0, false, 0, {{NULL}, NULL}, {{NULL}, NULL}}
 #define HandConfigMsg_init_zero                  {{{NULL}, NULL}, {{NULL}, NULL}}
 #define HandCmdMsg_init_zero                     {_HandChipInstance_MIN, {{NULL}, NULL}}
 #define HandDataWrapper_init_zero                {{{NULL}, NULL}}
 #define HandConfigWrapper_init_zero              {{{NULL}, NULL}}
 #define HandCmdWrapper_init_zero                 {{{NULL}, NULL}}
-#define HandMsg_init_zero                        {_HandMsgDirection_MIN, _HandMainMsgType_MIN, _HandChipType_MIN, 0, {HandDataWrapper_init_zero}}
+#define HandMsg_init_zero                        {0, _HandMsgDirection_MIN, _HandMainMsgType_MIN, _HandChipType_MIN, 0, {HandDataWrapper_init_zero}}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define HandDataMsg_source_tag                   1
@@ -181,12 +182,13 @@ extern "C" {
 #define HandDataWrapper_data_msgs_tag            1
 #define HandConfigWrapper_config_msgs_tag        1
 #define HandCmdWrapper_cmd_msgs_tag              1
-#define HandMsg_direction_tag                    1
-#define HandMsg_msg_type_tag                     2
-#define HandMsg_chip_type_tag                    3
-#define HandMsg_data_wrapper_tag                 4
-#define HandMsg_config_wrapper_tag               5
-#define HandMsg_cmd_wrapper_tag                  6
+#define HandMsg_bytes_count_tag                  1
+#define HandMsg_direction_tag                    2
+#define HandMsg_msg_type_tag                     3
+#define HandMsg_chip_type_tag                    4
+#define HandMsg_data_wrapper_tag                 5
+#define HandMsg_config_wrapper_tag               6
+#define HandMsg_cmd_wrapper_tag                  7
 
 /* Struct field encoding specification for nanopb */
 #define HandDataMsg_FIELDLIST(X, a) \
@@ -230,12 +232,13 @@ X(a, CALLBACK, REPEATED, MESSAGE,  cmd_msgs,          1)
 #define HandCmdWrapper_cmd_msgs_MSGTYPE HandCmdMsg
 
 #define HandMsg_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, UENUM,    direction,         1) \
-X(a, STATIC,   SINGULAR, UENUM,    msg_type,          2) \
-X(a, STATIC,   SINGULAR, UENUM,    chip_type,         3) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (content,data_wrapper,content.data_wrapper),   4) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (content,config_wrapper,content.config_wrapper),   5) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (content,cmd_wrapper,content.cmd_wrapper),   6)
+X(a, STATIC,   SINGULAR, FIXED32,  bytes_count,       1) \
+X(a, STATIC,   SINGULAR, UENUM,    direction,         2) \
+X(a, STATIC,   SINGULAR, UENUM,    msg_type,          3) \
+X(a, STATIC,   SINGULAR, UENUM,    chip_type,         4) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (content,data_wrapper,content.data_wrapper),   5) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (content,config_wrapper,content.config_wrapper),   6) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (content,cmd_wrapper,content.cmd_wrapper),   7)
 #define HandMsg_CALLBACK NULL
 #define HandMsg_DEFAULT NULL
 #define HandMsg_content_data_wrapper_MSGTYPE HandDataWrapper

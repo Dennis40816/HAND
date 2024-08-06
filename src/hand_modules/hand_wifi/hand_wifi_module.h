@@ -31,11 +31,26 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 
-/* TODO: make this can be overwritten by macro (ifndef) */
+#include "hand_util/hand_util.h"
+
+/* TODO: make macro overwriteable for platform io it's impossible except you
+ * move it into library */
 
 /* Public define */
-#define HAND_WIFI_MODULE_DEFAULT_SSID      ("CHT061975")
-#define HAND_WIFI_MODULE_DEFAULT_PASSWORD  ("24577079")
+#ifndef HAND_WIFI_MODULE_DEFAULT_SSID
+#define HAND_WIFI_MODULE_DEFAULT_SSID ("CHT061975")
+#endif
+#ifndef HAND_WIFI_MODULE_DEFAULT_PASSWORD
+#define HAND_WIFI_MODULE_DEFAULT_PASSWORD ("24577079")
+#endif
+
+
+#pragma message "The value of HAND_WIFI_MODULE_DEFAULT_SSID: " TOSTRING( \
+    HAND_WIFI_MODULE_DEFAULT_SSID)
+#pragma message "The value of HAND_WIFI_MODULE_DEFAULT_PASSWORD: " TOSTRING( \
+    HAND_WIFI_MODULE_DEFAULT_PASSWORD)
+
+
 #define HAND_WIFI_MODULE_DEFAULT_MAX_RETRY (5)
 #define HAND_WIFI_MODULE_DEFAULT_MODE      (WIFI_MODE_STA)
 #define HAND_WIFI_MODULE_DEFAULT_INTERFACE (WIFI_IF_STA)
