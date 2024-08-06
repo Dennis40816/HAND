@@ -77,7 +77,7 @@ typedef struct hand_server_address_t
    * A string representing the IP address of the server.
    */
   char ip[INET6_ADDRSTRLEN];  // Enough space for both IPv4 and IPv6
-                                     // addresses
+                              // addresses
 
   /**
    * @brief Server port number
@@ -104,6 +104,13 @@ typedef struct hand_server_config_t
   hand_server_type_t server_type;
 
   /**
+   * @brief Max client number at once
+   * @warning Only take effect when using TCP server
+   *
+   */
+  int max_connection;
+
+  /**
    * @brief Address family option (e.g., AF_INET for IPv4, AF_INET6 for IPv6)
    *
    * Specifies the address family to be used (IPv4 or IPv6).
@@ -120,11 +127,59 @@ typedef struct hand_server_config_t
   /**
    * @brief Address for server
    *
-   * @note If addr.ip is not null -> will treated as require static ip (not implemented)
+   * @note If addr.ip is not null -> will treated as require static ip (not
+   * implemented)
    */
   hand_server_address_t addr;
 
 } hand_server_config_t;
 
+/* TODO: needs refactor */
+/**
+ * @brief Configuration structure for the client.
+ *
+ * This structure contains configuration settings for the client, including
+ * the address family (IPv4/IPv6), socket flags, server IP address, server port,
+ * and client name.
+ */
+typedef struct hand_tcp_client_config_t
+{
+  /**
+   * @brief Address family option (e.g., AF_INET for IPv4, AF_INET6 for IPv6)
+   *
+   * Specifies the address family to be used (IPv4 or IPv6).
+   */
+  hand_socket_addr_family_t addr_family;
+
+  /**
+   * @brief Flags for fcntl to set socket options (e.g., O_NONBLOCK)
+   *
+   * This integer sets flags for the socket using fcntl.
+   */
+  int fcntl_flag;
+
+  /**
+   * @brief Address for server
+   *
+   * Specifies the IP address and port of the server to connect to.
+   */
+  hand_server_address_t server_addr;
+
+  /**
+   * @brief Name of the client
+   *
+   * A string representing the name of the client.
+   */
+  const char* client_name;
+} hand_tcp_client_config_t;
+
 /* public API */
+
 esp_err_t hand_server_get_current_ip(esp_netif_ip_info_t* info);
+esp_err_t hand_server_create(hand_server_config_t* local_config,
+                             hand_server_address_t* dest_addr, int* socket_fd);
+
+/* TODO: needs refactor */
+
+esp_err_t hand_client_connect(hand_tcp_client_config_t* client_config,
+                              int* client_socket);
