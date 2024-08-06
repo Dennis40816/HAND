@@ -7,6 +7,43 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
 - HAND FPC board PCB files
 - HAND app (written in Flutter)
 
+## Install Dependencys
+
+### Optional
+
+- Local
+
+  - [LLVM (clang-format)](https://llvm.org/builds/)
+
+## Nanopb & ProtoBuf
+
+- For nanopb and c output, do:
+
+  ```bash
+  # make sure you are in the root of project
+
+  # open platformio CLI
+
+  # generate by nanopb_generator.py
+  python .pio\libdeps\hand_firmware\Nanopb\generator\nanopb_generator.py src\hand_modules\hand_data\proto\hand_data.proto
+  ```
+
+- For protobuf and python output, do
+
+  - make sure you already install protoc and it's available cmd from your terminal
+
+  ```bash
+  # make sure you are in the root of project
+
+  # open platformio CLI
+
+  # make sure you have protobuf in python
+  pip install protobuf
+
+  # compile protobuf
+  protoc -I=src/hand_modules/hand_data/proto --python_out=tools/tcp_server src/hand_modules/hand_data/proto/hand_data.proto
+  ```
+
 ## Part test
 
 - [CH-101 on ESP32-S3-MINI](https://github.com/Dennis40816/HAND/tree/port_ch101/doc/part_test/port_ch101)
@@ -63,7 +100,8 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
 
 ## Notes on Writing `extra_script.py` in the Library
 
-- In the library, ensure that all required files (including `.c` files) have their parent folders included in either: 
+- In the library, ensure that all required files (including `.c` files) have their parent folders included in either:
+
   1. The `build` flags in `library.json` (`-I` flags)
   2. Using `env.Append(CPPPATH=[absolute_path])` in `extra_script.py`
 
