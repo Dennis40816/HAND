@@ -94,12 +94,13 @@ message HandCmdWrapper {
 }
 
 message HandMsg {
-  HandMsgDirection direction = 1;
-  HandMainMsgType msg_type = 2;
-  HandChipType chip_type = 3;
+  fixed32 bytes_count = 1; 
+  HandMsgDirection direction = 2;
+  HandMainMsgType msg_type = 3;
+  HandChipType chip_type = 4;
   oneof content {
-    HandDataWrapper data_wrapper = 4;
-    HandConfigWrapper config_wrapper = 5;
-    HandCmdWrapper cmd_wrapper = 6;
+    HandDataWrapper data_wrapper = 5;
+    HandConfigWrapper config_wrapper = 6;
+    HandCmdWrapper cmd_wrapper = 7;
   }
 }

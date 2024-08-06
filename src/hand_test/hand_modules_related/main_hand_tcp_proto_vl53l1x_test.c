@@ -7,12 +7,13 @@
 
 static const char *TAG = "HAND_TCP_CLIENT_TEST";
 
-#define NUM_SENSORS 2
-#define SENSOR_DATA_COUNT 10
-#define BUFFER_SIZE 2048
-#define SERVER_IP "192.168.1.17"
-#define SERVER_PORT 8055
-#define TASK_DELAY_MS 1000
+#define BYTE_NUM_PLACEHOLDER 1
+#define NUM_SENSORS          2
+#define SENSOR_DATA_COUNT    100
+#define BUFFER_SIZE          2048
+#define SERVER_IP            "192.168.1.17"
+#define SERVER_PORT          8055
+#define TASK_DELAY_MS        1000
 
 int64_t timestamps[SENSOR_DATA_COUNT];
 HandDataMsg data_msgs[NUM_SENSORS];
@@ -23,7 +24,8 @@ bool encode_sensor_data(pb_ostream_t *stream, const pb_field_t *field,
 {
   float *sensor_data = (float *)(*arg);
   return pb_encode_tag_for_field(stream, field) &&
-         pb_encode_string(stream, (uint8_t *)sensor_data, SENSOR_DATA_COUNT * sizeof(float));
+         pb_encode_string(stream, (uint8_t *)sensor_data,
+                          SENSOR_DATA_COUNT * sizeof(float));
 }
 
 /* Callback function to encode the timestamps */
@@ -60,6 +62,13 @@ bool encode_data_msgs(pb_ostream_t *stream, const pb_field_t *field,
   return true;
 }
 
+static bool write_bytes_count_to_buf(uint8_t *buf, size_t offset,
+                                     uint32_t value)
+{
+  pb_ostream_t stream = pb_ostream_from_buffer(buf + offset, sizeof(uint32_t));
+  return pb_encode_fixed32(&stream, &value);
+}
+
 /**
  * @brief Task to send VL53L1X simulated data over TCP.
  *
@@ -78,6 +87,7 @@ static void send_task(void *pvParameters)
     HandMsg hand_msg = HandMsg_init_zero;
 
     // Set direction and message type
+    hand_msg.bytes_count = BYTE_NUM_PLACEHOLDER;  // just a place holder
     hand_msg.direction = HandMsgDirection_FROM_HAND;
     hand_msg.msg_type = HandMainMsgType_DATA;
     hand_msg.chip_type = HandChipType_VL53L1X;
@@ -138,6 +148,10 @@ static void send_task(void *pvParameters)
     ESP_LOGI(TAG,
              "Message encoded successfully, size: %zu bytes, time: %lld us",
              stream.bytes_written, encode_duration);
+
+    // Overwrite buffer[1:4] by the function
+    const size_t field1_offset = 1;
+    write_bytes_count_to_buf(buffer, field1_offset, stream.bytes_written);
 
     // Timing start - sending data
     start_time = esp_timer_get_time();

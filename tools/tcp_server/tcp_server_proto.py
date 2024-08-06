@@ -1,20 +1,13 @@
 import socket
 import selectors
-import hand_data_pb2  # Generated Protocol Buffers file
-import binascii
 import struct
-import shutil
+import hand_data_pb2  # Generated Protocol Buffers file
 
 HOST = "0.0.0.0"
 PORT = 8055
 
 # Create a selector object
 sel = selectors.DefaultSelector()
-
-def print_full_line(char='#'):
-    """Print a full line of the given character to fill the terminal width."""
-    columns = shutil.get_terminal_size().columns
-    print(char * columns)
 
 # Data type mapping dictionary
 data_type_map = {
@@ -23,7 +16,7 @@ data_type_map = {
     hand_data_pb2.INT32: "INT32",
     hand_data_pb2.INT64: "INT64",
     hand_data_pb2.FLOAT: "FLOAT",
-    hand_data_pb2.DOUBLE: "DOUBLE"
+    hand_data_pb2.DOUBLE: "DOUBLE",
 }
 
 # Source mapping dictionary
@@ -46,8 +39,9 @@ source_map = {
     hand_data_pb2.BOS1901_ACTUATOR4: "BOS1901_ACTUATOR4",
     hand_data_pb2.BMI323_IMU: "BMI323_IMU",
     hand_data_pb2.TCA6408A_CH101: "TCA6408A_CH101",
-    hand_data_pb2.TCA6408A_OTHER: "TCA6408A_OTHER"
+    hand_data_pb2.TCA6408A_OTHER: "TCA6408A_OTHER",
 }
+
 
 def accept(sock, mask):
     conn, addr = sock.accept()
@@ -55,33 +49,68 @@ def accept(sock, mask):
     conn.setblocking(False)
     sel.register(conn, selectors.EVENT_READ, read)
 
+
 def read(conn, mask):
-    print(' ' * 2)
+    print(" " * 2)
     print_full_line()
-    data = conn.recv(4096)  # Read data from the connection
-    if data:
+
+    # Read the first 5 bytes
+    try:
+        initial_data = conn.recv(5)
+        if len(initial_data) < 5:
+            print("Failed to read the initial 5 bytes")
+            sel.unregister(conn)
+            conn.close()
+            return
+
+        # Parse the first byte (tag) and the next 4 bytes (fixed32)
+        tag = initial_data[0]
+        remaining_bytes = (
+            struct.unpack("<I", initial_data[1:5])[0] - 5
+        )  # Subtract the initial 5 bytes
+
+        print(f"Tag: {tag}")
+        print(f"Remaining bytes: {remaining_bytes}")
+
+        # Read the remaining data, ensuring we read all the bytes
+        data = bytearray()
+        while len(data) < remaining_bytes:
+            try:
+                packet = conn.recv(remaining_bytes - len(data))
+                if not packet:
+                    print("Connection closed before all data was received")
+                    sel.unregister(conn)
+                    conn.close()
+                    return
+                data.extend(packet)
+            except BlockingIOError:
+                continue
+
+        # Combine initial_data and data to form the complete message
+        complete_data = initial_data + data
+
         try:
-            print(f'Msg len: {len(data)}')
-            # print(binascii.hexlify(data))
-            
+            print(f"Msg len: {len(complete_data)}")
+            # print(binascii.hexlify(complete_data))
+
             # Deserialize handmsg
             msg = hand_data_pb2.HandMsg()
-            msg.ParseFromString(data)
-            
+            msg.ParseFromString(complete_data)
+
             # # Print the deserialized message
             # print(f"Received message: {msg}")
-            
+
             # Parse data messages
             if msg.msg_type == hand_data_pb2.DATA and msg.HasField("data_wrapper"):
                 for data_msg in msg.data_wrapper.data_msgs:
-                    print(' ')
+                    print(" ")
                     data_type_str = data_type_map.get(data_msg.data_type, "Unknown")
                     source_str = source_map.get(data_msg.source, "Unknown")
                     print(f"Source: {source_str}")
                     print(f"Data Type: {data_type_str}")
                     print(f"Data Count: {data_msg.data_count}")
                     print(f"Timestamps: {data_msg.timestamps}")
-                    
+
                     # Decode data based on data_type
                     data_format = ""
                     if data_msg.data_type == hand_data_pb2.UINT8:
@@ -96,19 +125,30 @@ def read(conn, mask):
                         data_format = f"{data_msg.data_count}f"
                     elif data_msg.data_type == hand_data_pb2.DOUBLE:
                         data_format = f"{data_msg.data_count}d"
-                    
+
                     if data_format:
                         decoded_data = struct.unpack(data_format, data_msg.data)
                         print(f"Decoded Data: {decoded_data}")
                     else:
                         print("Unknown data type")
-                    
+
         except Exception as e:
             print(f"Failed to parse message: {e}")
-    else:
-        print("Closing connection")
+            sel.unregister(conn)
+            conn.close()
+    except Exception as e:
+        print(f"Exception during read: {e}")
         sel.unregister(conn)
         conn.close()
+
+
+def print_full_line(char="#"):
+    """Print a full line of the given character to fill the terminal width."""
+    import shutil
+
+    columns = shutil.get_terminal_size().columns
+    print(char * columns)
+
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -119,11 +159,19 @@ def main():
 
     sel.register(sock, selectors.EVENT_READ, accept)
 
-    while True:
-        events = sel.select()
-        for key, mask in events:
-            callback = key.data
-            callback(key.fileobj, mask)
+    try:
+        while True:
+            events = sel.select(timeout=1)  # Set a timeout for select
+            for key, mask in events:
+                callback = key.data
+                callback(key.fileobj, mask)
+    except KeyboardInterrupt:
+        print("\nServer is shutting down...")
+    finally:
+        sel.close()
+        sock.close()
+        print("Server closed")
+
 
 if __name__ == "__main__":
     main()
