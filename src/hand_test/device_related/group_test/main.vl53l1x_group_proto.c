@@ -31,7 +31,13 @@
 #define NUM_SENSORS          2
 #define SENSOR_DATA_COUNT    100
 #define PB_BUFFER_SIZE       2048
+
+#ifndef HAND_DEFAULT_LOG_SERVER_IP
 #define SERVER_IP            "192.168.0.170"
+#else
+#define SERVER_IP HAND_DEFAULT_LOG_SERVER_IP
+#endif
+
 #define SERVER_PORT          8055
 #define TASK_DELAY_MS        500
 

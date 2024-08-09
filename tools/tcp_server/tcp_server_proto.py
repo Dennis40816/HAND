@@ -9,6 +9,13 @@ import re
 import json
 from google.protobuf.json_format import MessageToJson
 
+# enable this when you want to debug
+DEBUG_ENABLE = False
+
+def debug_print(arg):
+    if DEBUG_ENABLE:
+        print(arg)
+
 HOST = "0.0.0.0"
 PORT = 8055
 
@@ -63,6 +70,8 @@ def get_max_index(log_dir):
 
 # log function
 def log_writer_thread(log_dir="logs"):
+    message_num = 0;
+    
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
@@ -72,15 +81,22 @@ def log_writer_thread(log_dir="logs"):
     # use a+
     with open(filename, "a+") as log_file:
         log_file.write('[')
+        
+        # A forever loop for log queue
         while True:
             msg = log_queue.get()
             if msg is None:
                 print('log recv None. Leaving log...')
                 break
+            message_num += 1
             log_file.write('\n')
             json.dump(msg, log_file, indent=2)
             log_file.write(',')
             log_file.flush()  # Flush the file buffer to ensure data is written to disk
+            
+            # let user know how many messages have been logged
+            if message_num % 10 == 0:
+                print(f"Logged {message_num} messages")
         
         # leaving
         with open(filename, "rb+") as log_file:
@@ -99,7 +115,7 @@ def accept(sock, mask):
 
 
 def read(conn, mask):
-    print(" " * 2)
+    debug_print(" " * 2)
     print_full_line()
 
     # Read the first 5 bytes
@@ -117,8 +133,8 @@ def read(conn, mask):
             struct.unpack("<I", initial_data[1:5])[0] - 5
         )  # Subtract the initial 5 bytes
 
-        print(f"Tag: {tag}")
-        print(f"Remaining bytes: {remaining_bytes}")
+        debug_print(f"Tag: {tag}")
+        debug_print(f"Remaining bytes: {remaining_bytes}")
 
         # Read the remaining data, ensuring we read all the bytes
         data = bytearray()
@@ -138,7 +154,7 @@ def read(conn, mask):
         complete_data = initial_data + data
 
         try:
-            print(f"Msg len: {len(complete_data)}")
+            debug_print(f"Msg len: {len(complete_data)}")
             # print(binascii.hexlify(complete_data))
 
             # Deserialize handmsg
@@ -153,13 +169,13 @@ def read(conn, mask):
 
             # Parse data messages
             for index, data_msg in enumerate(msg.data_wrapper.data_msgs):
-                print(" ")
+                debug_print(" ")
                 data_type_str = data_type_map.get(data_msg.data_type, "Unknown")
                 source_str = source_map.get(data_msg.source, "Unknown")
-                print(f"Source: {source_str}")
-                print(f"Data Type: {data_type_str}")
-                print(f"Data Count: {data_msg.data_count}")
-                print(f"Timestamps: {data_msg.timestamps}")
+                debug_print(f"Source: {source_str}")
+                debug_print(f"Data Type: {data_type_str}")
+                debug_print(f"Data Count: {data_msg.data_count}")
+                debug_print(f"Timestamps: {data_msg.timestamps}")
 
                 # Decode data based on data_type
                 data_format = ""
@@ -178,7 +194,7 @@ def read(conn, mask):
 
                 if data_format:
                     decoded_data = struct.unpack(data_format, data_msg.data)
-                    print(f"Decoded Data: {decoded_data}")
+                    debug_print(f"Decoded Data: {decoded_data}")
                     tmp_json_obj["dataWrapper"]["dataMsgs"][index]["data"] = list(decoded_data)
                     
                 else:
@@ -202,7 +218,7 @@ def print_full_line(char="#"):
     import shutil
 
     columns = shutil.get_terminal_size().columns
-    print(char * columns)
+    debug_print(char * columns)
 
 
 def main():
