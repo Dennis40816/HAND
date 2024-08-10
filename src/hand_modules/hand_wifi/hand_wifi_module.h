@@ -167,8 +167,11 @@ esp_err_t hand_wifi_module_disconnect();
 /**
  * @brief Replace custom wifi event handler
  *
- * @warning Please do not "reset the set bits" in the event_handler, which will
- * break the internal process.
+ * @warning Please do not reset the set bits in the event_handler, as this will
+ * disrupt the internal process. Specifically, if the new event handler makes use of 
+ * `xEventGroupWaitBits`, ensure that the parameter `xClearOnExit` is set to `pdFalse`. 
+ * Otherwise, it will interfere with the operation of `hand_wifi_module_init`, 
+ * which processes the bits after `_custom_event_handler`.
  */
 esp_err_t hand_wifi_module_update_handler(esp_event_handler_t event_handler);
 

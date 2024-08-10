@@ -286,10 +286,12 @@ esp_err_t hand_wifi_module_init(hand_wifi_handle_t handle,
         "Block: wait_util_connect is set, block util connection is created");
 
     /* Note: will not clear set bit when exit */
-    EventBits_t bits = xEventGroupWaitBits(
-        _hand_wifi_internal_handle->wifi_event_group,
-        HAND_WIFI_GOT_IP_BIT | HAND_WIFI_CONNECT_FAIL_BIT, pdFALSE, pdFALSE,
-        portMAX_DELAY);
+    /* TODO: check if we can clear the bits here (for we already has
+     * _custom_event_handler)?  */
+    EventBits_t bits =
+        xEventGroupWaitBits(_hand_wifi_internal_handle->wifi_event_group,
+                            HAND_WIFI_GOT_IP_BIT | HAND_WIFI_CONNECT_FAIL_BIT,
+                            pdFALSE, pdFALSE, portMAX_DELAY);
 
     if (bits & HAND_WIFI_GOT_IP_BIT)
     {
