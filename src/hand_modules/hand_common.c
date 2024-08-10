@@ -19,24 +19,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 #include "hand_common.h"
 #include "hand_wifi/hand_wifi_module.h"
 #include "hand_terminal/hand_terminal_module.h"
 
-#ifndef HAND_DEFAULT_LOG_SERVER_IP 
+#include "driver/usb_serial_jtag.h"
+
+#ifndef HAND_DEFAULT_LOG_SERVER_IP
 #define HAND_DEFAULT_LOG_SERVER_IP "192.168.1.17"
 #endif
 
 static const char* TAG = "HAND_COMMON";
 
+static hand_i2c_init() {}
+static hand_spi_init()
+{
+
+}
+static hand_gpio_init()
+{
+
+}
+static hand_intr_init()
+{
+
+}
+
 esp_err_t hand_init()
 {
   esp_err_t ret = ESP_OK;
 
-  vTaskDelay(pdMS_TO_TICKS(1000));
+  /* wait for system starts if usb plugged in */
+  if (usb_serial_jtag_is_connected())
+  {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
 
   ret = hand_wifi_module_mount(NULL);
+
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "hand_wifi_module_mount failed");
+    return ret;
+  }
 
   /* TODO: add return path */
 
@@ -44,18 +69,28 @@ esp_err_t hand_init()
 
   ret = hand_wifi_module_get_default_handle(&wifi_settings);
 
-  /* TODO: add return path */
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "hand_wifi_module_get_default_handle failed");
+    return ret;
+  }
 
   /* Note: modify the ssid and password according to your config */
   // const char* new_ssid = "NEW_SSID";
   // memcpy(&wifi_settings.config.ssid, &new_ssid, sizeof(new_ssid));
+  // const char* new_password = "NEW_PASSWORD";
+  // memcpy(&wifi_settings.config.password, &new_password, sizeof(new_password));
 
   hand_wifi_module_update_handler(NULL);
 
   /* should connect */
   ret = hand_wifi_module_init(&wifi_settings, true);
 
-  /* TODO: add return path */
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "hand_wifi_module_init failed");
+    return ret;
+  }
 
   hand_terminal_t terminal_setting = {
       .local_server = {.server_type = HAND_UDP_SERVER,
@@ -65,7 +100,26 @@ esp_err_t hand_init()
       .dest_addr = {.ip = HAND_DEFAULT_LOG_SERVER_IP, .port = 12345}};
 
   ret = hand_terminal_module_mount(NULL);
-  /* TODO: add return path */
+
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "hand_terminal_module_mount failed");
+    return ret;
+  }
+
   ret = hand_terminal_module_init(&terminal_setting);
+
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "hand_terminal_module_init failed");
+    return ret;
+  }
+
+  /* Init hand hardware begin */
+  /* XXX: exclude CH101 related config */
+
+  /* TODO: get all gpio states */
+  // gpio_dump_all_io_configuration();
+
   return ret;
 }
