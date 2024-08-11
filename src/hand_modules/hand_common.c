@@ -20,8 +20,6 @@
  * SOFTWARE.
  */
 #include "hand_common.h"
-#include "hand_wifi/hand_wifi_module.h"
-#include "hand_terminal/hand_terminal_module.h"
 
 #include "driver/usb_serial_jtag.h"
 
@@ -31,21 +29,21 @@
 
 static const char* TAG = "HAND_COMMON";
 
-static hand_i2c_init() {}
-static hand_spi_init()
-{
+// static hand_i2c_init() {}
+// static hand_spi_init()
+// {
 
-}
-static hand_gpio_init()
-{
+// }
+// static hand_gpio_init()
+// {
 
-}
-static hand_intr_init()
-{
+// }
+// static hand_intr_init()
+// {
 
-}
+// }
 
-esp_err_t hand_init()
+esp_err_t hand_init(const char* ssid, const char* password)
 {
   esp_err_t ret = ESP_OK;
 
@@ -63,11 +61,20 @@ esp_err_t hand_init()
     return ret;
   }
 
-  /* TODO: add return path */
-
   hand_wifi_t wifi_settings;
 
-  ret = hand_wifi_module_get_default_handle(&wifi_settings);
+  ret = hand_wifi_module_set_handle(&wifi_settings, ssid, password);
+
+  // OR
+
+  // ret = hand_wifi_module_get_default_handle(&wifi_settings);
+
+  /* Note: modify the ssid and password according to your config */
+  // const char* new_ssid = "NEW_SSID";
+  // memcpy(&wifi_settings.config.ssid, &new_ssid, sizeof(new_ssid));
+  // const char* new_password = "NEW_PASSWORD";
+  // memcpy(&wifi_settings.config.password, &new_password,
+  // sizeof(new_password));
 
   if (ret != ESP_OK)
   {
@@ -75,11 +82,9 @@ esp_err_t hand_init()
     return ret;
   }
 
-  /* Note: modify the ssid and password according to your config */
-  // const char* new_ssid = "NEW_SSID";
-  // memcpy(&wifi_settings.config.ssid, &new_ssid, sizeof(new_ssid));
-  // const char* new_password = "NEW_PASSWORD";
-  // memcpy(&wifi_settings.config.password, &new_password, sizeof(new_password));
+  ESP_LOGI(TAG, "Default Wi-Fi SSID: %s", (char*)&wifi_settings.config.ssid);
+  ESP_LOGI(TAG, "Default Wi-Fi Password: %s",
+           (char*)&wifi_settings.config.password);
 
   hand_wifi_module_update_handler(NULL);
 

@@ -242,9 +242,14 @@ static void vl53l1x_init(VL53L1_DEV dev, bool calibration_en)
   ESP_LOGW(TAG, "Init process end");
 }
 
+// You can overwrite these macros
+
+// #define HAND_WIFI_MODULE_DEFAULT_SSID "YOUR_SSID"
+// #define HAND_WIFI_MODULE_DEFAULT_PASSWORD "YOUR_SSID"
+
 void app_main(void)
 {
-  hand_init();
+  hand_init(HAND_WIFI_MODULE_DEFAULT_SSID, HAND_WIFI_MODULE_DEFAULT_PASSWORD);
 
   /* XXX: Do not call "*", it will cause Wi-Fi crash */
   // D (123100) esp_netif_lwip: esp_netif_ip_lost_timer esp_netif:0x3fcab3f8

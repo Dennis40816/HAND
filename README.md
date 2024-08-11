@@ -117,3 +117,7 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
 
   - 位於 extra_script.py 的 include path => 需要重新 build
   - 位於 library.json, CMakeLists.txt, platformio.ini 的 build flags `-I` => 需要偵測到 platformio.ini 更新時才會改動，可以簡單的刪除一個符號再重新加上後儲存即可
+
+## 觀察
+
+- 直接 include 能夠覆蓋，但是隔著檔案 include 則不能覆蓋 => 並不是這樣的，而是到底是在 header 還是 src 引入實作要用的 header 會影響 macro 內部是否能夠覆蓋

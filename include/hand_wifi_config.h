@@ -22,5 +22,15 @@
  * SOFTWARE.
  */
 
-#include "hand_hw_config.h"
-#include "hand_wifi_config.h"
+/* @USER: Wi-Fi config */
+#ifndef HAND_WIFI_MODULE_DEFAULT_SSID
+#define HAND_WIFI_MODULE_DEFAULT_SSID "602lab"
+#endif
+
+#ifndef HAND_WIFI_MODULE_DEFAULT_PASSWORD
+#define DHAND_WIFI_MODULE_DEFAULT_PASSWORD "602mems206"
+#endif
+
+#ifndef HAND_DEFAULT_LOG_SERVER_IP
+#define HAND_DEFAULT_LOG_SERVER_IP "192.168.1.17"
+#endif

@@ -543,9 +543,14 @@ static void send_task(void *pvParameters)
   }
 }
 
+// You can overwrite these macros
+
+// #define HAND_WIFI_MODULE_DEFAULT_SSID "YOUR_SSID"
+// #define HAND_WIFI_MODULE_DEFAULT_PASSWORD "YOUR_SSID"
+
 void app_main(void)
 {
-  hand_init();
+  hand_init(HAND_WIFI_MODULE_DEFAULT_SSID, HAND_WIFI_MODULE_DEFAULT_PASSWORD);
 
   // Initialize mutex
   first_data_in_queue = xSemaphoreCreateBinary();

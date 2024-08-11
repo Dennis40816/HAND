@@ -23,9 +23,12 @@ static void send_task(void* pvParameters)
   }
 }
 
+// #define HAND_WIFI_MODULE_DEFAULT_SSID "YOUR_SSID"
+// #define HAND_WIFI_MODULE_DEFAULT_PASSWORD "YOUR_SSID"
+
 void app_main(void)
 {
-  hand_init();
+  hand_init(HAND_WIFI_MODULE_DEFAULT_SSID, HAND_WIFI_MODULE_DEFAULT_PASSWORD);
 
   /* Create a tcp client */
   hand_tcp_client_config_t tcp_client_config = {

@@ -23,6 +23,9 @@
  */
 
 #include "hand_config.h"
+// hand_wifi_module can be overwritten by hand_config.h
+#include "hand_wifi/hand_wifi_module.h"
+#include "hand_terminal/hand_terminal_module.h"
 
 #include "esp_log.h"
 #include "esp_err.h"
@@ -32,4 +35,4 @@
 #include "freertos/task.h"
 
 /* Public API */
-esp_err_t hand_init();
+esp_err_t hand_init(const char* ssid, const char* password);

@@ -32,16 +32,17 @@
 #include "freertos/event_groups.h"
 
 #include "hand_util/hand_util.h"
+#include "hand_wifi_config.h"
 
 /* TODO: make macro overwriteable for platform io it's impossible except you
  * move it into library */
 
 /* Public define */
 #ifndef HAND_WIFI_MODULE_DEFAULT_SSID
-#define HAND_WIFI_MODULE_DEFAULT_SSID ("CHT061975")
+#define HAND_WIFI_MODULE_DEFAULT_SSID ("602lab")
 #endif
 #ifndef HAND_WIFI_MODULE_DEFAULT_PASSWORD
-#define HAND_WIFI_MODULE_DEFAULT_PASSWORD ("24577079")
+#define HAND_WIFI_MODULE_DEFAULT_PASSWORD ("602mems206")
 #endif
 
 
@@ -181,3 +182,4 @@ EventGroupHandle_t hand_wifi_module_get_event_group_handle();
 
 /* user needs to allocate the dereference of handle first */
 esp_err_t hand_wifi_module_get_default_handle(hand_wifi_handle_t handle);
+esp_err_t hand_wifi_module_set_handle(hand_wifi_handle_t handle, const char* ssid, const char* password);
