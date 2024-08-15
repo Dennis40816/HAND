@@ -28,6 +28,8 @@
 /**
  * @brief HAND hardware configuration, please ref to sch pdf (hand_main_v2.pdf)
  *
+ * @note Search @USER section (user can modify)
+ *
  * @note  - KX132 -> KX132-1211 (accelerometer)
  * @note  - TCA -> TCA6408A (IO expander)
  * @note  - BQ25302 -> Battery charger
@@ -63,17 +65,21 @@
  * - CH101_4
  */
 #define HAND_FIRMWARE_VERSION "1.0.1"
-/* gpio level related */
 
+/* gpio level related */
 #define HAND_GPIO_LEVEL_LOW        (0)
 #define HAND_GPIO_LEVEL_HIGH       (1)
-#define HAND_GPIO_DUMMY_PIN        (-1)
 #define HAND_BQ25302_EN_ENABLE     HAND_GPIO_LEVEL_LOW
 #define HAND_BQ25302_EN_DISABLE    HAND_GPIO_LEVEL_HIGH
 #define HAND_VBUS_DETECT_PLUG      HAND_GPIO_LEVEL_HIGH
 #define HAND_VBUS_DETECT_UNPLUG    HAND_GPIO_LEVEL_LOW
 #define HAND_BATTERY_DETECT_PLUG   HAND_GPIO_LEVEL_HIGH
 #define HAND_BATTERY_DETECT_UNPLUG HAND_GPIO_LEVEL_LOW
+
+/* Util */
+
+// just a placeholder
+#define HAND_PIN_DUMMY (-1)
 
 /* I2C related */
 #define HAND_PIN_I2C_OTHER_SCL (GPIO_NUM_0)
@@ -216,11 +222,27 @@
 #define HAND_BUS_I2C_ADDR_CH101_PROG (0x45)
 
 // @USER: Modifiable
+// XXX: Currently, VL53L1X use 8 bit address. Needs to refactor later
 #define HAND_BUS_I2C_ADDR_CH101_1 (0x2A)  // 42
 #define HAND_BUS_I2C_ADDR_CH101_2 (0x2B)  // 43
 #define HAND_BUS_I2C_ADDR_CH101_3 (0x2C)  // 44
 #define HAND_BUS_I2C_ADDR_CH101_4 (0x2D)  // 45
 
-// XXX: Currently, VL53L1X use 8 bit address. Needs to refactor later
 #define HAND_BUS_I2C_ADDR_VL53L1X_1 (0x60)
 #define HAND_BUS_I2C_ADDR_VL53L1X_2 (0x62)
+
+/* Devices num */
+#define HAND_DEV_MAX_NUM_BOS1901 (4)
+#define HAND_DEV_MAX_NUM_KX132   (4)
+#define HAND_DEV_MAX_NUM_CH101   (4)
+#define HAND_DEV_MAX_NUM_VL53L1X (2)
+#define HAND_DEV_MAX_NUM_TCA6408 (2)
+#define HAND_DEV_MAX_NUM_BQ27427 (1)
+#define HAND_DEV_MAX_NUM_BMI323  (1)
+
+/* VL53L1X related */
+// This must be uint16_t [20, 1000]
+#define HAND_VL53L1X_DEFAULT_TIMING_BUDGET_MS (50)
+// This argument should be equal or larger than (VL53L1X_TIMING_BUDGET_MS +
+// 4)
+#define HAND_VL53L1X_DEFAULT_MEASURE_PERIOD_MS (100)

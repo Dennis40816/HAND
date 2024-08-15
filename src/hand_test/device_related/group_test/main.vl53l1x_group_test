@@ -249,7 +249,7 @@ static void vl53l1x_init(VL53L1_DEV dev, bool calibration_en)
 
 void app_main(void)
 {
-  hand_init(HAND_WIFI_MODULE_DEFAULT_SSID, HAND_WIFI_MODULE_DEFAULT_PASSWORD);
+  hand_init(HAND_WIFI_MODULE_DEFAULT_SSID, HAND_WIFI_MODULE_DEFAULT_PASSWORD, false);
 
   /* XXX: Do not call "*", it will cause Wi-Fi crash */
   // D (123100) esp_netif_lwip: esp_netif_ip_lost_timer esp_netif:0x3fcab3f8

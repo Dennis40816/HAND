@@ -550,7 +550,7 @@ static void send_task(void *pvParameters)
 
 void app_main(void)
 {
-  hand_init(HAND_WIFI_MODULE_DEFAULT_SSID, HAND_WIFI_MODULE_DEFAULT_PASSWORD);
+  hand_init(HAND_WIFI_MODULE_DEFAULT_SSID, HAND_WIFI_MODULE_DEFAULT_PASSWORD, false);
 
   // Initialize mutex
   first_data_in_queue = xSemaphoreCreateBinary();

@@ -1,5 +1,4 @@
 #pragma once
-
 /*
  * Copyright (c) 2024 Dennis Liu, dennis48161025@gmail.com
  *
@@ -22,37 +21,10 @@
  * SOFTWARE.
  */
 
-#include "hand_hw_config.h"
-#include "hand_wifi_config.h"
-
-/* CPU ID related config (driver) */
-#define HAND_CPU_ID_SPI2 (0)
-#define HAND_CPU_ID_SPI3 (0)
-
-/* CPU ID related config (tasks) */
-
-/* Size */
-
-// SPI bus
-#define HAND_SIZE_SPI2_TRANSFER      (4096)
-#define HAND_SIZE_SPI2_BMI323_QUEUE  (10)
-#define HAND_SIZE_SPI2_BOS1901_QUEUE (10)
-#define HAND_SIZE_SPI2_KX132_QUEUE   (5)
-
-#define HAND_SIZE_SPI3_TRANSFER    (4096)
-#define HAND_SIZE_SPI3_KX132_QUEUE (5)
-
-// Ping pong buffer (PPB)
-#define HAND_SIZE_PPB_VL53L1X (35)
-#define HAND_SIZE_PPB_CH101   (35)
-
-// NanoPB stream buffer size
-#define HAND_SIZE_NANOPB_BUFFER_VL53L1X (2048)
-
-// Queue size (size of the queue used for buffering real-time data before
-// storing it in the ping-pong buffer.)
-#define HAND_SIZE_QUEUE_VL53L1X (10)
-#define HAND_SIZE_QUEUE_CH101   (10)
-
-/* Delay time (ms) */
-#define HAND_DELAY_VL53L1X_SEND_DATA (500)
+#include "soniclib.h"			// Chirp SonicLib sensor API definitions
+#include "chirp_board_config.h"	// required header with basic device counts etc.
+#include "app_config.h"
+#include "app_version.h"
+#include "chirp_bsp.h"			// board support package function definitions
+#include "chirp_smartsonic.h"
+#include "ultrasound_display_config_info.h"

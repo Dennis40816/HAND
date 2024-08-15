@@ -105,6 +105,8 @@ extern "C"
     bos1901_spi_dev_t *spi_dev;        ///< Pointer to the SPI device structure
   } bos1901_dev_t;
 
+  typedef bos1901_dev_t* bos1901_dev_handle_t;
+
   /**
    * @brief Create a new BOS1901 device.
    *

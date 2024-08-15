@@ -1,5 +1,4 @@
-#pragma once
-
+#pragma once 
 /*
  * Copyright (c) 2024 Dennis Liu, dennis48161025@gmail.com
  *
@@ -22,37 +21,21 @@
  * SOFTWARE.
  */
 
-#include "hand_hw_config.h"
-#include "hand_wifi_config.h"
+/* Public struct */
 
-/* CPU ID related config (driver) */
-#define HAND_CPU_ID_SPI2 (0)
-#define HAND_CPU_ID_SPI3 (0)
+/**
+ * @brief Take only a socket as arg
+ * 
+ */
+typedef int hand_task_arg_vl53l1x_send_data_t;
 
-/* CPU ID related config (tasks) */
+/* Public API */
 
-/* Size */
-
-// SPI bus
-#define HAND_SIZE_SPI2_TRANSFER      (4096)
-#define HAND_SIZE_SPI2_BMI323_QUEUE  (10)
-#define HAND_SIZE_SPI2_BOS1901_QUEUE (10)
-#define HAND_SIZE_SPI2_KX132_QUEUE   (5)
-
-#define HAND_SIZE_SPI3_TRANSFER    (4096)
-#define HAND_SIZE_SPI3_KX132_QUEUE (5)
-
-// Ping pong buffer (PPB)
-#define HAND_SIZE_PPB_VL53L1X (35)
-#define HAND_SIZE_PPB_CH101   (35)
-
-// NanoPB stream buffer size
-#define HAND_SIZE_NANOPB_BUFFER_VL53L1X (2048)
-
-// Queue size (size of the queue used for buffering real-time data before
-// storing it in the ping-pong buffer.)
-#define HAND_SIZE_QUEUE_VL53L1X (10)
-#define HAND_SIZE_QUEUE_CH101   (10)
-
-/* Delay time (ms) */
-#define HAND_DELAY_VL53L1X_SEND_DATA (500)
+/**
+ * @brief 
+ * 
+ * @param arg 
+ * 
+ * @TODO 未來可以透過 arg 中的某個 flag 決定該任務是否重啟
+ */
+void hand_task_vl53l1x_send_data(void* arg);
