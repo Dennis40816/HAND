@@ -22,6 +22,7 @@
 
 /* Includes */
 #include "hand_terminal_module.h"
+#include "hand_task/hand_task.h"
 #include "hand_task/hand_task_priority.h"
 
 #include "esp_netif.h"
@@ -265,8 +266,9 @@ esp_err_t hand_terminal_module_init(hand_terminal_handle_t handle)
   /* run terminal input task (in direction) */
   /* TODO: add para for recv task */
   void* para = NULL;
-  xTaskCreate(hand_terminal_recv_task, "hand_terminal_recv_task", 4096, para,
-              HAND_TERMINAL_RECV_TASK_PRIORITY, &_recv_task_handle);
+  xTaskCreate(hand_terminal_recv_task, "hand_terminal_recv_task",
+              HAND_TASK_SS_TERMINAL_RECV, para,
+              HAND_TASK_PRIORITY_TERMINAL_RECV, &_recv_task_handle);
 
   /* send esp32 ip and port information to destination server side */
   esp_netif_ip_info_t ip_info;

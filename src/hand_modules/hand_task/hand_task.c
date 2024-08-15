@@ -33,10 +33,139 @@
 
 static const char* TAG = "HAND_TASK";
 
-void hand_task_vl53l1x_from_queue_to_ppb(void* arg)
+void hand_task_vl53l1x_collect_data(void* __attribute__((unused)) arg)
+{
+  VL53L1_Dev_t* vl53l1x_dev_p = hand_global_devs_handle.vl53l1x_dev;
+  VL53L1_Error ret;
+  EventBits_t event_bits;
+
+  /* start measurement procedure on vl53l1x group  */
+  for (uint8_t dev_index = 0; dev_index < HAND_DEV_MAX_NUM_VL53L1X; ++dev_index)
+  {
+    ret = VL53L1_StartMeasurement(&(vl53l1x_dev_p[dev_index]));
+    if (ret == VL53L1_ERROR_NONE)
+    {
+      /* start successfully */
+      ESP_LOGI(TAG, "VL53L1X_{%d} started measurement successfully",
+               dev_index + 1);
+    }
+    else
+    {
+      ESP_LOGE(
+          TAG,
+          "VL53L1X_{%d} FAILED to start measurement. VL53L1 Error code: {%d} ",
+          dev_index + 1, ret);
+    }
+
+    /* TODO: record start measurement states and only collect data from active
+     * device */
+  }
+
+  /* TODO: add a stop flag in arg */
+  /* collect data permanently */
+  while (1)
+  {
+    /* TODO: Allow the task to continue after waiting for n milliseconds when
+   only one flag is set. This ensures that if one VL53L1X sensor fails, the
+   other can still operate. */
+    event_bits = xEventGroupWaitBits(
+        hand_global_vl53l1x_event_group,
+        HAND_EG_VL53L1X_1_DATA_READY_BIT | HAND_EG_VL53L1X_2_DATA_READY_BIT,
+        pdTRUE,  // clear wait bit when exit
+        pdTRUE,  // fire only at all bits are set
+        portMAX_DELAY);
+
+    int64_t timestamp = esp_timer_get_time();
+
+    /* init new vl53l1x data element */
+    hand_vl53l1x_data_element_t new_vl53l1x_data = {0};
+    new_vl53l1x_data.timestamp = timestamp;
+
+    /* CRITICAL REGION: call hardware related function */
+    /* TODO: make it a loop (like ) */
+    /* pseudo code
+       for (int i = 0, int v = 0; v < MAX_SHIFT_NUM; ++i, v <<= 1)
+       {
+          if (active_dev[i] == true)
+          {
+            // do measurement by &(vl53l1x_dev_p[i])
+          }
+       }
+     */
+    if (event_bits & HAND_EG_VL53L1X_1_DATA_READY_BIT)
+    {
+      VL53L1_RangingMeasurementData_t range_data;
+      VL53L1_Error status =
+          VL53L1_GetRangingMeasurementData(&(vl53l1x_dev_p[0]), &range_data);
+
+      if (status == VL53L1_ERROR_NONE)
+      {
+        ESP_LOGV(TAG, "VL53L1X_1: %3.1f (cm)",
+                 range_data.RangeMilliMeter / 10.0);
+        new_vl53l1x_data.data1 = range_data.RangeMilliMeter / 10.0;
+      }
+      else
+      {
+        /* TODO: error handle (set failure bit) */
+      }
+
+      status = VL53L1_ClearInterruptAndStartMeasurement(&(vl53l1x_dev_p[0]));
+
+      if (status != VL53L1_ERROR_NONE)
+      {
+        ESP_LOGW(TAG,
+                 "Status of VL53L1X_{%d} in "
+                 "`VL53L1_ClearInterruptAndStartMeasurement` is: {%d}",
+                 1, status);
+        /* TODO: error handle (set failure bit) */
+      }
+    }
+
+    if (event_bits & HAND_EG_VL53L1X_2_DATA_READY_BIT)
+    {
+      VL53L1_RangingMeasurementData_t range_data;
+      VL53L1_Error status =
+          VL53L1_GetRangingMeasurementData(&(vl53l1x_dev_p[1]), &range_data);
+
+      if (status == VL53L1_ERROR_NONE)
+      {
+        ESP_LOGV(TAG, "VL53L1X_2: %3.1f (cm)",
+                 range_data.RangeMilliMeter / 10.0);
+        new_vl53l1x_data.data2 = range_data.RangeMilliMeter / 10.0;
+      }
+      else
+      {
+        /* TODO: error handle (set failure bit) */
+      }
+
+      status = VL53L1_ClearInterruptAndStartMeasurement(&(vl53l1x_dev_p[1]));
+
+      if (status != VL53L1_ERROR_NONE)
+      {
+        ESP_LOGW(TAG,
+                 "Status of VL53L1X_{%d} in "
+                 "`VL53L1_ClearInterruptAndStartMeasurement` is: {%d}",
+                 2, status);
+        /* TODO: error handle (set failure bit) */
+      }
+    }
+
+    /* TODO: check that using portMAX_DELAY is appropriate */
+    xQueueSend(hand_global_vl53l1x_data_queue, &new_vl53l1x_data,
+               portMAX_DELAY);
+
+    /* TODO: check other bit is set or not -> error handle here (activate_dev[i]
+     * = false...) */
+  }
+}
+
+void hand_task_vl53l1x_from_queue_to_ppb(void* __attribute__((unused)) arg)
 {
   hand_vl53l1x_data_element_t new_vl53l1x_data;
   hand_ppb_vl53l1x_data_t* const ppb_p = &hand_global_vl53l1x_ping_pong_buffer;
+
+  /* parse task arg (currently, remain unused))*/
+
   while (1)
   {
     /* pop new_vl53l1x_data from queue */
@@ -77,8 +206,11 @@ void hand_task_vl53l1x_send_data(void* arg)
   hand_ppb_vl53l1x_data_t* const ppb_p = &hand_global_vl53l1x_ping_pong_buffer;
   uint8_t buffer[HAND_SIZE_NANOPB_BUFFER_VL53L1X];
 
-  hand_task_arg_vl53l1x_send_data_t* _arg =
+  hand_task_arg_vl53l1x_send_data_t* task_arg_p =
       (hand_task_arg_vl53l1x_send_data_t*)arg;
+
+  /* parse task arg */
+  int client_socket = *task_arg_p;
 
   TickType_t xLastWakeTime = xTaskGetTickCount();
 
@@ -167,7 +299,53 @@ void hand_task_vl53l1x_send_data(void* arg)
 
       hand_msg.content.data_wrapper.data_msgs.funcs.encode =
           hand_encode_data_msg_pointers_array;
-      hand_msg.content.data_wrapper.data_msgs.arg = &msg_arg; // TODO: check this correct or not
+      hand_msg.content.data_wrapper.data_msgs.arg =
+          &msg_arg;  // TODO: check this correct or not
+
+      /* start to encode */
+      int64_t start_time = esp_timer_get_time();
+
+      /* prepare ostream */
+      pb_ostream_t stream =
+          pb_ostream_from_buffer(buffer, HAND_SIZE_NANOPB_BUFFER_VL53L1X);
+
+      /* encode */
+      if (!pb_encode(&stream, HandMsg_fields, &hand_msg))
+      {
+        ESP_LOGE(TAG, "Encoding failed: %s", PB_GET_ERROR(&stream));
+        continue;
+      }
+
+      int64_t end_time = esp_timer_get_time();
+      int64_t encode_duration = end_time - start_time;
+      ESP_LOGI(TAG,
+               "VL53L1X message encoded successfully, size: %zu bytes, time: "
+               "%lld us",
+               stream.bytes_written, encode_duration);
+
+      // Overwrite buffer[1:4] by the function
+      hand_overwrite_buf_bytes_count(buffer, stream.bytes_written);
+
+      // Timing start - sending data
+      start_time = esp_timer_get_time();
+
+      int ret = send(client_socket, buffer, stream.bytes_written, 0);
+      if (ret < 0)
+      {
+        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+      }
+      else
+      {
+        ESP_LOGV(TAG, "Message sent successfully");
+      }
+
+      end_time = esp_timer_get_time();
+      int64_t transmit_duration = end_time - start_time;
+      ESP_LOGI(TAG, "Data transmitted successfully, time: %lld us",
+               transmit_duration);
     }
+    // Delay until the next cycle
+    vTaskDelayUntil(&xLastWakeTime,
+                    pdMS_TO_TICKS(HAND_MS_VL53L1X_SEND_DATA));
   }
 }

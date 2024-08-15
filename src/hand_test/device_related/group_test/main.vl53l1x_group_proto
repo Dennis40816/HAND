@@ -173,7 +173,7 @@ static const char *TAG = "VL53L1X_GROUP_PROTO_TEST";
 
 /* create vl53l1x devices */
 VL53L1_Dev_t vl53l1x_1 = {.I2cHandle = I2C_NUM_0,
-                          .comms_speed_khz = (uint16_t)400,
+                          .comms_speed_khz = (uint16_t)400, // not actually used
                           .I2cDevAddr = VL53L1X_DEFAULT_I2C_ADDRESS,
                           .new_data_ready_poll_duration_ms = 100};
 

@@ -25,8 +25,30 @@
 #include "hand_config.h"
 
 /* public define */
-// This is a placeholder value (can not be 0) for hand msg, the bytes_count
-// field will be replaced by hand_overwrite_buf_bytes_count()
+
+/**
+ * @brief Defines the length and offset values for the `bytes_count` field in
+ * HAND_MSG.
+ *
+ * The `bytes_count` field length is defined as 1 byte. This is consistent with
+ * the general protobuf rule where all fields are represented by 1 byte in the
+ * message. The `bytes_count` field is always the first field in a HAND_MSG
+ * structure and is of type `fixed32`, which means it occupies a fixed size of 4
+ * bytes in the message. The value of this field is located at the 1st to 4th
+ * bytes of the message when it is non-zero.
+ *
+ * The purpose of `HAND_MSG_BYTES_COUNT_PLACEHOLDER_VALUE` is to provide a
+ * placeholder value for this field. This ensures that when the `bytes_count`
+ * value is not required or is zero, a placeholder value of 1 is used to
+ * maintain the structure's integrity.
+ */
+// being the first field, so the offset is 0
+#define HAND_MSG_BYTES_COUNT_FIELD_OFFSET (0)
+#define HAND_MSG_BYTES_COUNT_FIELD_LENGTH (1)
+#define HAND_MSG_BYTES_COUNT_VALUE_OFFSET \
+  (HAND_MSG_BYTES_COUNT_FIELD_OFFSET + HAND_MSG_BYTES_COUNT_FIELD_LENGTH)
+// fixed32 is 4 bytes len
+#define HAND_MSG_BYTES_COUNT_VALUE_LENGTH      (4)
 #define HAND_MSG_BYTES_COUNT_PLACEHOLDER_VALUE (1)
 
 /* public struct */
@@ -68,6 +90,8 @@ typedef struct hand_chx01_data_t
 #define HAND_PPB_UNSET_BUFFER_INDEX (0)
 #define HAND_PPB_SET_BUFFER_INDEX   (1)
 
+// VL53L1X related
+
 #define HAND_PPB_VL53L1X_BUFFER_NUM (2)
 typedef struct hand_ppb_vl53l1x_data_t
 {
@@ -75,3 +99,13 @@ typedef struct hand_ppb_vl53l1x_data_t
   uint16_t current_index;
   hand_vl53l1x_data_t data[HAND_PPB_VL53L1X_BUFFER_NUM];
 } hand_ppb_vl53l1x_data_t;
+
+// CH101 related
+
+#define HAND_PPB_CH101_BUFFER_NUM (2)
+typedef struct hand_ppb_ch101_data_t
+{
+  bool ping_pong_flag;
+  uint16_t current_index;
+  hand_chx01_data_t data[HAND_PPB_CH101_BUFFER_NUM];
+} hand_ppb_ch101_data_t;

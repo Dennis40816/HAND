@@ -30,34 +30,61 @@
 
 #include "hand_data/hand_data.h"
 #include "hand_common.h"
+#include "hand_task/hand_task.h"
 
 #include "esp_err.h"
 
 /* HAND related */
+
 extern hand_devices_handle_t hand_global_devs_handle;
+extern hand_task_handle_t hand_global_task_handle;
 
 /* CH101 related */
+
 extern uint8_t hand_global_ch101_active_dev_num;
 extern uint8_t hand_global_ch101_triggered_dev_num;
 
 /* Ping pong buffer related */
 
-// VL53L1X
+// VL53L1X related
+
 extern SemaphoreHandle_t hand_global_vl53l1x_ping_pong_mutex;
 extern hand_ppb_vl53l1x_data_t hand_global_vl53l1x_ping_pong_buffer;
 
+// CH101 related
+
+extern SemaphoreHandle_t hand_global_ch101_ping_pong_mutex;
+extern hand_ppb_ch101_data_t hand_global_ch101_ping_pong_buffer;
+
 /* Queue related */
 
-// VL53L1X
+// VL53L1X related
+
 extern QueueHandle_t hand_global_vl53l1x_data_queue;
 
+// CH101 related
+
+extern QueueHandle_t hand_global_ch101_data_queue;
+
 /* Event group (EG) related */
+
+// VL53L1X related
+
 #define HAND_EG_VL53L1X_1_DATA_READY_BIT (1 << 0)
 #define HAND_EG_VL53L1X_2_DATA_READY_BIT (1 << 1)
 #define HAND_EG_VL53L1X_1_FAILURE_BIT    (1 << 2)
 #define HAND_EG_VL53L1X_2_FAILURE_BIT    (1 << 3)
 
 extern EventGroupHandle_t hand_global_vl53l1x_event_group;
+
+// CH101 related
+
+#define HAND_EG_CH101_1_DATA_READY_BIT (1 << 0)
+#define HAND_EG_CH101_2_DATA_READY_BIT (1 << 1)
+#define HAND_EG_CH101_3_DATA_READY_BIT (1 << 2)
+#define HAND_EG_CH101_4_DATA_READY_BIT (1 << 3)
+
+extern EventGroupHandle_t hand_global_ch101_event_group;
 
 /* public API */
 

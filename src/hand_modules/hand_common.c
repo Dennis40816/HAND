@@ -84,7 +84,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
   esp_err_t ret = ESP_OK;
 
   /* init I2C_0 (I2C OTHER) */
-  i2c_port_t i2c0_port = I2C_NUM_0;
+  i2c_port_t i2c0_port = HAND_BUS_I2C_0_PORT_NUM;
   i2c_config_t i2c0_cfg = {.mode = I2C_MODE_MASTER,
                            .sda_io_num = HAND_PIN_I2C_OTHER_SDA,
                            .scl_io_num = HAND_PIN_I2C_OTHER_SCL,
@@ -98,22 +98,33 @@ static esp_err_t hand_i2c_bus_and_device_init(
 
   /* init TCA6408A group (both @I2C_0) */
   devs_handle_p->tca_dev[0].address = HAND_BUS_I2C_ADDR_TCA_OTHER;
-  devs_handle_p->tca_dev[0].i2c_bus = I2C_NUM_0;
+  devs_handle_p->tca_dev[0].i2c_bus = HAND_BUS_I2C_0_PORT_NUM;
   devs_handle_p->tca_dev[1].address = HAND_BUS_I2C_ADDR_TCA_CH101;
-  devs_handle_p->tca_dev[1].i2c_bus = I2C_NUM_0;
+  devs_handle_p->tca_dev[1].i2c_bus = HAND_BUS_I2C_0_PORT_NUM;
   ESP_LOGI(TAG, "TCA6408 devices initialized");
 
   /* TODO: init BQ27427 (if battery is inserted) */
   // TODO: read battery and vbus pin
 
-  /* init VL53L1X group */
-  VL53L1_ConfigTca6408a(I2C_NUM_0);
+  /* init VL53L1X handle value (I2C address and port ...) */
+  for (uint8_t i = 0; i < HAND_DEV_MAX_NUM_VL53L1X; ++i)
+  {
+    hand_global_devs_handle.vl53l1x_dev[i].I2cHandle = HAND_BUS_I2C_0_PORT_NUM;
+    hand_global_devs_handle.vl53l1x_dev[i].comms_speed_khz =
+        (uint16_t)HAND_BUS_I2C_0_KHZ_SPEED;  // not actually used
+    hand_global_devs_handle.vl53l1x_dev[i].I2cDevAddr =
+        HAND_BUS_I2C_ADDR_VL53L1X_DEFAULT;
+    hand_global_devs_handle.vl53l1x_dev[i].new_data_ready_poll_duration_ms =
+        HAND_MS_VL53L1X_NEW_DATA_READY_POLL_DURATION;
+  }
+
+  VL53L1_ConfigTca6408a(HAND_BUS_I2C_0_PORT_NUM);
 
   // TODO: workaround, need refactor
   const uint8_t vl53l1x_1_index = 1;
   const uint8_t vl53l1x_2_index = 2;
-  const VL53L1_DEV vl53l1x_1 = &(devs_handle_p->vl53l1x_dev[0]);
-  const VL53L1_DEV vl53l1x_2 = &(devs_handle_p->vl53l1x_dev[1]);
+  VL53L1_DEV vl53l1x_1 = &(devs_handle_p->vl53l1x_dev[0]);
+  VL53L1_DEV vl53l1x_2 = &(devs_handle_p->vl53l1x_dev[1]);
 
   VL53L1_GpioXshutdown(vl53l1x_1_index, HAND_GPIO_LEVEL_LOW);
   VL53L1_GpioXshutdown(vl53l1x_2_index, HAND_GPIO_LEVEL_LOW);
@@ -151,7 +162,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
 
   ESP_LOGI(TAG, "Initializing CH101 sensor(s)... ");
 
-  uint8_t chirp_err;
+  uint8_t chirp_err = 0;
 
   for (uint8_t dev_num = 0; dev_num < num_ports; dev_num++)
   {
@@ -193,7 +204,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
     if (ch_sensor_is_connected(dev_ptr))
     {
       ESP_LOGI(
-          TAG, "%d\tCH%d\t %u Hz\t%u@%ums\t%s", dev_num,
+          TAG, "%d\tCH%d\t %u Hz\t%u@%ums\t\t%s", dev_num,
           ch_get_part_number(dev_ptr), (unsigned int)ch_get_frequency(dev_ptr),
           ch_get_rtc_cal_result(dev_ptr), ch_get_rtc_cal_pulselength(dev_ptr),
           ch_get_fw_version_string(dev_ptr));
@@ -323,19 +334,17 @@ static esp_err_t hand_spi_bus_and_device_init(
   esp_err_t ret = ESP_OK;
 
   /* init SPI2 */
-  spi_host_device_t spi2_host = SPI2_HOST;
-  spi_bus_config_t spi2_buscfg = {
-      .mosi_io_num = HAND_PIN_SPI_2_MOSI,
-      .miso_io_num = HAND_PIN_SPI_2_MISO,
-      .sclk_io_num = HAND_PIN_SPI_2_SCLK,
-      .quadwp_io_num = HAND_PIN_DUMMY,
-      .quadhd_io_num = HAND_PIN_DUMMY,
-      .max_transfer_sz = HAND_SIZE_SPI2_TRANSFER,
-      .flags = 0,
-      .intr_flags = 0,
-      // TODO: wait for testing
-      // .isr_cpu_id = HAND_CPU_ID_SPI2
-  };
+  spi_host_device_t spi2_host = HAND_BUS_SPI_2_PORT_NUM;
+  spi_bus_config_t spi2_buscfg = {.mosi_io_num = HAND_PIN_SPI_2_MOSI,
+                                  .miso_io_num = HAND_PIN_SPI_2_MISO,
+                                  .sclk_io_num = HAND_PIN_SPI_2_SCLK,
+                                  .quadwp_io_num = HAND_PIN_DUMMY,
+                                  .quadhd_io_num = HAND_PIN_DUMMY,
+                                  .max_transfer_sz = HAND_SIZE_SPI2_TRANSFER,
+                                  .flags = 0,
+                                  .intr_flags = 0,
+                                  // TODO: wait for testing
+                                  .isr_cpu_id = HAND_CPU_ID_SPI2};
 
   ESP_ERROR_CHECK(spi_bus_initialize(spi2_host, &spi2_buscfg, SPI_DMA_CH_AUTO));
   ESP_LOGI(TAG, "SPI2 host initialized");
@@ -455,19 +464,17 @@ static esp_err_t hand_spi_bus_and_device_init(
   ESP_LOGI(TAG, "BOS1901 group device initialized");
 
   /* init SPI3 */
-  spi_host_device_t spi3_host = SPI3_HOST;
-  spi_bus_config_t spi3_buscfg = {
-      .mosi_io_num = HAND_PIN_SPI_3_MOSI,
-      .miso_io_num = HAND_PIN_SPI_3_MISO,
-      .sclk_io_num = HAND_PIN_SPI_3_SCLK,
-      .quadwp_io_num = HAND_PIN_DUMMY,
-      .quadhd_io_num = HAND_PIN_DUMMY,
-      .max_transfer_sz = HAND_SIZE_SPI3_TRANSFER,
-      .flags = 0,
-      .intr_flags = 0,
-      // TODO: wait for testing
-      // .isr_cpu_id = HAND_CPU_ID_SPI3
-  };
+  spi_host_device_t spi3_host = HAND_BUS_SPI_3_PORT_NUM;
+  spi_bus_config_t spi3_buscfg = {.mosi_io_num = HAND_PIN_SPI_3_MOSI,
+                                  .miso_io_num = HAND_PIN_SPI_3_MISO,
+                                  .sclk_io_num = HAND_PIN_SPI_3_SCLK,
+                                  .quadwp_io_num = HAND_PIN_DUMMY,
+                                  .quadhd_io_num = HAND_PIN_DUMMY,
+                                  .max_transfer_sz = HAND_SIZE_SPI3_TRANSFER,
+                                  .flags = 0,
+                                  .intr_flags = 0,
+                                  // TODO: wait for testing
+                                  .isr_cpu_id = HAND_CPU_ID_SPI3};
 
   ESP_ERROR_CHECK(spi_bus_initialize(spi3_host, &spi3_buscfg, SPI_DMA_CH_AUTO));
   ESP_LOGI(TAG, "SPI3 host initialized");
@@ -514,6 +521,59 @@ static esp_err_t hand_spi_bus_and_device_init(
 }
 
 /* GPIO related */
+static esp_err_t hand_gpio_init_debug(hand_devices_handle_t* devs_handle_p)
+{
+  esp_err_t ret = ESP_OK;
+
+  /* LED related [DEBUG-P1, P2] */
+  ESP_LOGI(TAG, "Initializing debug gpio pins (TXD0, RXD0, DEBUG_P4)");
+
+  gpio_config_t io_conf = {};
+  io_conf.intr_type = GPIO_INTR_DISABLE;
+  io_conf.pin_bit_mask = (1ULL << HAND_PIN_DEBUG_TXD0) |
+                         (1ULL << HAND_PIN_DEBUG_RXD0) |
+                         (1ULL << HAND_PIN_DEBUG_P4);
+  io_conf.mode = GPIO_MODE_OUTPUT;
+  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+  io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
+  ret = gpio_config(&io_conf);
+
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "Initialized debug gpio pins (TXD0, RXD0, DEBUG_P4) FAILED!");
+    return ret;
+  }
+
+  ESP_LOGI(TAG, "Initializing RGB LED gpio and RMT channel");
+
+  /* RGB LED related (RMT) [DEBUG-PIN3] */
+  led_strip_config_t strip_config = {
+      .strip_gpio_num = HAND_PIN_DEBUG_RGB_LED,  // The GPIO that connected to
+                                                 // the LED strip's data line
+      .max_leds = HAND_DEV_MAX_NUM_RGB_LED,  // The number of LEDs in the strip,
+      .led_pixel_format =
+          LED_PIXEL_FORMAT_GRB,       // Pixel format of your LED strip
+      .led_model = LED_MODEL_WS2812,  // LED strip model
+      .flags.invert_out = false,  // whether to invert the output signal (useful
+                                  // when your hardware has a level inverter)
+  };
+
+  led_strip_rmt_config_t rmt_config = {
+      .clk_src = RMT_CLK_SRC_DEFAULT,  // different clock source can lead to
+                                       // different power consumption
+      .resolution_hz = HAND_BUS_RMT_LED_SPEED,  // 10MHz
+      .flags.with_dma = false,  // whether to enable the DMA feature
+  };
+
+  ret = led_strip_new_rmt_device(&strip_config, &rmt_config,
+                                 &(devs_handle_p->rgb_led_handle));
+
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "RGB LED init FAILED!");
+  }
+  return ret;
+}
 
 static esp_err_t hand_gpio_init_vl53l1x()
 {
@@ -533,29 +593,10 @@ static esp_err_t hand_gpio_init(hand_devices_handle_t* devs_handle_p)
   /* VL53L1X related */
   hand_gpio_init_vl53l1x();
 
-  /* LED related (RMT) */
-  led_strip_config_t strip_config = {
-      .strip_gpio_num = HAND_PIN_DEBUG_RGB_LED,  // The GPIO that connected to
-                                                 // the LED strip's data line
-      .max_leds = 1,  // The number of LEDs in the strip,
-      .led_pixel_format =
-          LED_PIXEL_FORMAT_GRB,       // Pixel format of your LED strip
-      .led_model = LED_MODEL_WS2812,  // LED strip model
-      .flags.invert_out = false,  // whether to invert the output signal (useful
-                                  // when your hardware has a level inverter)
-  };
+  /* debug pin related */
+  ret = hand_gpio_init_debug(devs_handle_p);
 
-  led_strip_rmt_config_t rmt_config = {
-      .clk_src = RMT_CLK_SRC_DEFAULT,     // different clock source can lead to
-                                          // different power consumption
-      .resolution_hz = 10 * 1000 * 1000,  // 10MHz
-      .flags.with_dma = false,            // whether to enable the DMA feature
-  };
-
-  ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config,
-                                           &(devs_handle_p->rgb_led_handle)));
-
-  /* TODO: Activate LED toggle */
+  return ret;
 }
 
 static esp_err_t hand_isr_init()
@@ -568,13 +609,16 @@ static esp_err_t hand_isr_init()
   gpio_install_isr_service(0);
 
   /* add vl53l1x related isr callback  */
+  ESP_LOGI(TAG, "Initializing ISR for VL53L1X...");
   gpio_isr_handler_add(HAND_PIN_INT_VL53L1X_1_GPIO1, hand_cb_vl53l1x_sensed,
                        (void*)HAND_PIN_INT_VL53L1X_1_GPIO1);
   gpio_isr_handler_add(HAND_PIN_INT_VL53L1X_2_GPIO1, hand_cb_vl53l1x_sensed,
                        (void*)HAND_PIN_INT_VL53L1X_2_GPIO1);
-}
 
-static esp_err_t hand_data_server_init() { esp_err_t ret = ESP_OK; }
+  /* TODO: dump intr */
+
+  return ret;
+}
 
 esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
 {
@@ -634,8 +678,9 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
       .local_server = {.server_type = HAND_UDP_SERVER,
                        .fcntl_flag = O_NONBLOCK,
                        .addr_family = HAND_AF_INET,
-                       .addr = {.port = 12345}},
-      .dest_addr = {.ip = HAND_DEFAULT_LOG_SERVER_IP, .port = 12345}};
+                       .addr = {.port = HAND_DEFAULT_LOG_SERVER_PORT}},
+      .dest_addr = {.ip = HAND_DEFAULT_LOG_SERVER_IP,
+                    .port = HAND_DEFAULT_LOG_SERVER_PORT}};
 
   ret = hand_terminal_module_mount(NULL);
 
@@ -653,23 +698,24 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
     return ret;
   }
 
-  /* Init hand hardware begin */
-  if (init_dev)
-  {
-    hand_spi_bus_and_device_init(&hand_global_devs_handle);
-    hand_i2c_bus_and_device_init(&hand_global_devs_handle);
-    hand_gpio_init(&hand_global_devs_handle);
-    hand_isr_init();
-    /* TODO: get all gpio states */
-    // gpio_dump_all_io_configuration();
-  }
-
   /* init global variable */
   ret = hand_global_var_init();
 
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "Init global variable failed!");
+  }
+
+  /* Init hand hardware begin */
+  if (init_dev)
+  {
+    hand_spi_bus_and_device_init(&hand_global_devs_handle);
+    hand_i2c_bus_and_device_init(&hand_global_devs_handle);
+    hand_gpio_init(&hand_global_devs_handle);
+
+    hand_isr_init();
+    /* TODO: get all gpio states */
+    // gpio_dump_all_io_configuration();
   }
 
   return ret;

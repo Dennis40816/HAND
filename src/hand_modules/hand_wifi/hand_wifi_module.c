@@ -22,6 +22,11 @@
 
 #include "hand_wifi_module.h"
 
+#pragma message "The value of HAND_WIFI_MODULE_DEFAULT_SSID: " TOSTRING( \
+    HAND_WIFI_MODULE_DEFAULT_SSID)
+#pragma message "The value of HAND_WIFI_MODULE_DEFAULT_PASSWORD: " TOSTRING( \
+    HAND_WIFI_MODULE_DEFAULT_PASSWORD)
+
 #include "string.h"
 
 #include "nvs_flash.h"
@@ -425,29 +430,38 @@ esp_err_t hand_wifi_module_get_default_handle(hand_wifi_handle_t handle)
   return ESP_OK;
 }
 
-esp_err_t hand_wifi_module_set_handle(hand_wifi_handle_t handle, const char* ssid, const char* password)
+esp_err_t hand_wifi_module_set_handle(hand_wifi_handle_t handle,
+                                      const char* ssid, const char* password)
 {
-    handle->max_retry = HAND_WIFI_MODULE_DEFAULT_MAX_RETRY;
-    handle->interface = HAND_WIFI_MODULE_DEFAULT_INTERFACE;
-    handle->mode = HAND_WIFI_MODULE_DEFAULT_MODE;
-    handle->wifi_event_group = NULL;
-    handle->user = NULL;
+  handle->max_retry = HAND_WIFI_MODULE_DEFAULT_MAX_RETRY;
+  handle->interface = HAND_WIFI_MODULE_DEFAULT_INTERFACE;
+  handle->mode = HAND_WIFI_MODULE_DEFAULT_MODE;
+  handle->wifi_event_group = NULL;
+  handle->user = NULL;
 
-    if (ssid && strlen(ssid) < sizeof(handle->config.ssid)) {
-        memcpy(handle->config.ssid, ssid, strlen(ssid) + 1);
-        handle->config.ssid_len = strlen(ssid);
-    } else {
-        memcpy(handle->config.ssid, HAND_WIFI_MODULE_DEFAULT_SSID, strlen(HAND_WIFI_MODULE_DEFAULT_SSID) + 1);
-        handle->config.ssid_len = strlen(HAND_WIFI_MODULE_DEFAULT_SSID);
-    }
+  if (ssid && strlen(ssid) < sizeof(handle->config.ssid))
+  {
+    memcpy(handle->config.ssid, ssid, strlen(ssid) + 1);
+    handle->config.ssid_len = strlen(ssid);
+  }
+  else
+  {
+    memcpy(handle->config.ssid, HAND_WIFI_MODULE_DEFAULT_SSID,
+           strlen(HAND_WIFI_MODULE_DEFAULT_SSID) + 1);
+    handle->config.ssid_len = strlen(HAND_WIFI_MODULE_DEFAULT_SSID);
+  }
 
-    if (password && strlen(password) < sizeof(handle->config.password)) {
-        memcpy(handle->config.password, password, strlen(password) + 1);
-        handle->config.password_len = strlen(password);
-    } else {
-        memcpy(handle->config.password, HAND_WIFI_MODULE_DEFAULT_PASSWORD, strlen(HAND_WIFI_MODULE_DEFAULT_PASSWORD) + 1);
-        handle->config.password_len = strlen(HAND_WIFI_MODULE_DEFAULT_PASSWORD);
-    }
+  if (password && strlen(password) < sizeof(handle->config.password))
+  {
+    memcpy(handle->config.password, password, strlen(password) + 1);
+    handle->config.password_len = strlen(password);
+  }
+  else
+  {
+    memcpy(handle->config.password, HAND_WIFI_MODULE_DEFAULT_PASSWORD,
+           strlen(HAND_WIFI_MODULE_DEFAULT_PASSWORD) + 1);
+    handle->config.password_len = strlen(HAND_WIFI_MODULE_DEFAULT_PASSWORD);
+  }
 
-    return ESP_OK;
+  return ESP_OK;
 }

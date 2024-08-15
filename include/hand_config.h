@@ -26,14 +26,21 @@
 #include "hand_wifi_config.h"
 
 /* CPU ID related config (driver) */
-#define HAND_CPU_ID_SPI2 (0)
-#define HAND_CPU_ID_SPI3 (0)
+
+/**
+ * @brief If the CPU ID is specified as 0, an "INSUFFICIENT INTR ALLOCATION"
+ * error may occur.
+ *
+ */
+#define HAND_CPU_ID_SPI2 (ESP_INTR_CPU_AFFINITY_1)
+#define HAND_CPU_ID_SPI3 (ESP_INTR_CPU_AFFINITY_1)
 
 /* CPU ID related config (tasks) */
 
 /* Size */
 
 // SPI bus
+
 #define HAND_SIZE_SPI2_TRANSFER      (4096)
 #define HAND_SIZE_SPI2_BMI323_QUEUE  (10)
 #define HAND_SIZE_SPI2_BOS1901_QUEUE (10)
@@ -43,16 +50,22 @@
 #define HAND_SIZE_SPI3_KX132_QUEUE (5)
 
 // Ping pong buffer (PPB)
+
 #define HAND_SIZE_PPB_VL53L1X (35)
 #define HAND_SIZE_PPB_CH101   (35)
 
 // NanoPB stream buffer size
+
 #define HAND_SIZE_NANOPB_BUFFER_VL53L1X (2048)
 
 // Queue size (size of the queue used for buffering real-time data before
 // storing it in the ping-pong buffer.)
+
 #define HAND_SIZE_QUEUE_VL53L1X (10)
 #define HAND_SIZE_QUEUE_CH101   (10)
 
-/* Delay time (ms) */
-#define HAND_DELAY_VL53L1X_SEND_DATA (500)
+/* Time related (ms) [delay, polling...] */
+
+// VL53L1X related
+#define HAND_MS_VL53L1X_NEW_DATA_READY_POLL_DURATION (100)
+#define HAND_MS_VL53L1X_SEND_DATA                    (500)

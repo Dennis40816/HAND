@@ -190,12 +190,24 @@
 #define HAND_PIN_DEBUG_RGB_LED HAND_PIN_DEBUG_P3
 
 /* Bus related config (address, speed, mode...). Needs test */
+// Bus number (port number)
+#define HAND_BUS_I2C_0_PORT_NUM (I2C_NUM_0)
+#define HAND_BUS_I2C_1_PORT_NUM (I2C_NUM_1)
+
+#define HAND_BUS_SPI_2_PORT_NUM (SPI2_HOST)
+#define HAND_BUS_SPI_3_PORT_NUM (SPI3_HOST)
+
 // Speed
-#define HAND_BUS_I2C_0_SPEED       (400000)    // 400k
-#define HAND_BUS_I2C_1_SPEED       (400000)    // 400k
+#define HAND_BUS_I2C_0_SPEED     (400000)  // 400k
+#define HAND_BUS_I2C_1_SPEED     (400000)  // 400k
+#define HAND_BUS_I2C_0_KHZ_SPEED (HAND_BUS_I2C_0_SPEED / 1000)
+#define HAND_BUS_I2C_1_KHZ_SPEED (HAND_BUS_I2C_1_SPEED / 1000)
+
 #define HAND_BUS_SPI_BOS1901_SPEED (32000000)  // 32M (Ideal Max 35M)
 #define HAND_BUS_SPI_KX132_SPEED   (10000000)  // 10M  (Ideal 10M)
 #define HAND_BUS_SPI_BMI323_SPEED  (10000000)  // 10M  (Ideal 10M)
+
+#define HAND_BUS_RMT_LED_SPEED (10000000)  // 10M
 
 // SPI mode (CPOL, CPHA)
 #define HAND_BUS_SPI_MODE_0       (0)  // (0, 0)
@@ -239,6 +251,7 @@
 #define HAND_DEV_MAX_NUM_TCA6408 (2)
 #define HAND_DEV_MAX_NUM_BQ27427 (1)
 #define HAND_DEV_MAX_NUM_BMI323  (1)
+#define HAND_DEV_MAX_NUM_RGB_LED (1)
 
 /* VL53L1X related */
 // This must be uint16_t [20, 1000]
@@ -246,3 +259,6 @@
 // This argument should be equal or larger than (VL53L1X_TIMING_BUDGET_MS +
 // 4)
 #define HAND_VL53L1X_DEFAULT_MEASURE_PERIOD_MS (100)
+
+/* RGB_LED related */
+#define HAND_RGB_LED_INDEX (0)
