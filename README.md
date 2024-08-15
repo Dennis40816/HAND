@@ -125,4 +125,5 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
 ## Alias Name List
 
 - PPB: Ping Pong Buffer
+- SS: Stack Size (for FreeRTOS task size)
 - HAND: Haptic Assitance Navigation Device
