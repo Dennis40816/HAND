@@ -2,10 +2,10 @@
 
 This repo contains the firmware code for the HAND main board (esp32-s3-mini). The following repositories are related to making the HAND platform work:
 
-- HAND firmware (current repo)
-- HAND main board PCB files
-- HAND FPC board PCB files
-- HAND app (written in Flutter)
+- [HAND firmware (current repo)](https://github.com/Dennis40816/HAND)
+- [HAND main board PCB files](https://github.com/Dennis40816/hand_main_pcb)
+- [HAND FPC board PCB files](https://github.com/Dennis40816/hand_fpc_pcb)
+- [HAND app (written in Flutter)](https://github.com/Dennis40816/hand_app)
 
 ## Install Dependencys
 
@@ -121,3 +121,8 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
 ## 觀察
 
 - 直接 include 能夠覆蓋，但是隔著檔案 include 則不能覆蓋 => 並不是這樣的，而是到底是在 header 還是 src 引入實作要用的 header 會影響 macro 內部是否能夠覆蓋
+
+## Alias Name List
+
+- PPB: Ping Pong Buffer
+- HAND: Haptic Assitance Navigation Device
