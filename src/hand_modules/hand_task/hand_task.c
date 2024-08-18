@@ -530,7 +530,7 @@ void hand_task_ch101_send_data(void* arg)
       ppb_p->ping_pong_flag = !ppb_p->ping_pong_flag;
 
       // Release the mutex immediately after accessing shared data
-      xSemaphoreGive(hand_global_vl53l1x_ping_pong_mutex);
+      xSemaphoreGive(hand_global_ch101_ping_pong_mutex);
     }
 
     if (send_data_index != 0)
