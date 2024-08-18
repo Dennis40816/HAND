@@ -7,7 +7,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
-static const char* TAG = "HAND_GLOBAL";
+static const char *TAG = "HAND_GLOBAL";
 
 /* TODO: should we use volatile? */
 
@@ -47,6 +47,9 @@ volatile EventGroupHandle_t hand_global_vl53l1x_event_group = NULL;
 // CH101 related
 volatile EventGroupHandle_t hand_global_ch101_event_group = NULL;
 
+// HAND system related
+volatile EventGroupHandle_t hand_global_system_event_group = NULL;
+
 /* public API */
 esp_err_t hand_global_var_init()
 {
@@ -66,6 +69,11 @@ esp_err_t hand_global_var_init()
   /* init event group */
   hand_global_vl53l1x_event_group = xEventGroupCreate();
   hand_global_ch101_event_group = xEventGroupCreate();
+  hand_global_system_event_group = xEventGroupCreate();
+
+  // make LED is controlled by `hand_task_alive`
+  xEventGroupSetBits(hand_global_system_event_group,
+                     HAND_EG_SYSTEM_LED_CONTROL_BY_ALIVE);
 
   /* TODO: init device handle */
 

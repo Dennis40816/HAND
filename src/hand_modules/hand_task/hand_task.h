@@ -27,6 +27,9 @@
 
 /* TODO: stack size (SS), needs optimization */
 
+// Alive related
+#define HAND_TASK_SS_ALIVE (2048)
+
 // Terminal related
 
 #define HAND_TASK_SS_TERMINAL_RECV (4096)
@@ -65,6 +68,10 @@ typedef struct hand_task_handle_t
   TaskHandle_t ch101_collect_data_handle;
   TaskHandle_t ch101_from_queue_to_ppb_handle;
   TaskHandle_t ch101_send_data_handle;
+
+  // Alive related
+
+  TaskHandle_t alive_handle;
 
   /* TODO: not implement yet */
 } hand_task_handle_t;
@@ -119,3 +126,5 @@ void hand_task_ch101_collect_data(void* __attribute__((unused)) arg);
 void hand_task_ch101_from_queue_to_ppb(void* __attribute__((unused)) arg);
 
 void hand_task_ch101_send_data(void* arg);
+
+void hand_task_alive(void* arg);

@@ -71,8 +71,8 @@ void app_main(void)
               HAND_TASK_PRIORITY_CH101_COLLECT_DATA,
               &hand_global_task_handle.ch101_collect_data_handle);
 
-  /* make RGB LED blue */
-  led_strip_set_pixel(hand_global_devs_handle.rgb_led_handle,
-                      HAND_RGB_LED_INDEX, 0, 8, 16);
-  led_strip_refresh(hand_global_devs_handle.rgb_led_handle);
+  ESP_LOGI(TAG, "Create hand_task_alive");
+
+  xTaskCreate(hand_task_alive, "hand_task_alive", HAND_TASK_SS_ALIVE, NULL,
+              HAND_TASK_PRIORITY_ALIVE, &hand_global_task_handle.alive_handle);
 }

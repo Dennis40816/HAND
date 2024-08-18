@@ -414,8 +414,6 @@ static void _hand_ch101_handle_data_ready(ch_group_t* grp_ptr)
                  pdMS_TO_TICKS(HAND_MS_CH101_QUEUE_MAX_DELAY));
     }
   }
-
-  ESP_LOGI(TAG, " ");
 }
 
 void hand_task_ch101_collect_data(void* __attribute__((unused)) arg)
@@ -626,5 +624,40 @@ void hand_task_ch101_send_data(void* arg)
     }
 
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(HAND_MS_CH101_SEND_DATA));
+  }
+}
+
+void hand_task_alive(void* arg)
+{
+  /* XXX: move to global states */
+  static bool led_on = true;
+
+  /* light up RGB LED blue */
+  led_strip_set_pixel(hand_global_devs_handle.rgb_led_handle,
+                      HAND_RGB_LED_INDEX, 0, 8, 16);
+  led_strip_refresh(hand_global_devs_handle.rgb_led_handle);
+
+  while (1)
+  {
+    if (xEventGroupGetBits(hand_global_system_event_group) &
+        HAND_EG_SYSTEM_LED_CONTROL_BY_ALIVE)
+    {
+      if (led_on)
+      {
+        led_strip_clear(hand_global_devs_handle.rgb_led_handle);
+        led_strip_refresh(hand_global_devs_handle.rgb_led_handle);
+      }
+      else
+      {
+        /* TODO: create hand_led lib */
+        led_strip_set_pixel(hand_global_devs_handle.rgb_led_handle,
+                            HAND_RGB_LED_INDEX, 0, 8, 16);
+        led_strip_refresh(hand_global_devs_handle.rgb_led_handle);
+      }
+      led_on = !led_on;
+    }
+
+    /* access led to blink */
+    vTaskDelay(pdMS_TO_TICKS(HAND_MS_ALIVE_BLINK_DELAY / 2));
   }
 }

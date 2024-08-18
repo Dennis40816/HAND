@@ -89,6 +89,14 @@ extern volatile EventGroupHandle_t hand_global_vl53l1x_event_group;
 
 extern volatile EventGroupHandle_t hand_global_ch101_event_group;
 
+// HAND system related
+
+#define HAND_EG_SYSTEM_BATTERY_PLUG_BIT     (1 << 0)
+#define HAND_EG_SYSTEM_USB_PLUG_BIT         (1 << 1)
+#define HAND_EG_SYSTEM_LED_CONTROL_BY_ALIVE (1 << 2)
+
+extern volatile EventGroupHandle_t hand_global_system_event_group;
+
 /* public API */
 
 /**
