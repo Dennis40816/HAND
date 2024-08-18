@@ -121,10 +121,10 @@ static void ioport_set_pin_dir_through_gpio(gpio_num_t gpio_num,
    * simplified? */
   gpio_set_direction(gpio_num, gpio_mode);
 
-  ESP_LOGD("chbsp_hand_espidf",
-           "In function {ioport_set_pin_dir_through_gpio}: Set gpio num: %d to "
-           "mode: %d.",
-           (int)gpio_num, (int)gpio_mode);
+  // ESP_LOGD("chbsp_hand_espidf",
+  //          "In function {ioport_set_pin_dir_through_gpio}: Set gpio num: %d to "
+  //          "mode: %d.",
+  //          (int)gpio_num, (int)gpio_mode);
 }
 
 /**
@@ -224,17 +224,17 @@ static void ioport_set_pin_level_through_gpio(gpio_num_t gpio_num, uint32_t val)
   /* ignore dummy pin */
   if (gpio_num == CHIRP_DUMMY_PIN)
   {
-    ESP_LOGD(
-        "chbsp_hand_espidf",
-        "In function {ioport_set_pin_level_through_gpio}: Dummy Pin. Aborted!");
+    // ESP_LOGD(
+    //     "chbsp_hand_espidf",
+    //     "In function {ioport_set_pin_level_through_gpio}: Dummy Pin. Aborted!");
     return;
   }
 
   gpio_set_level(gpio_num, val);
-  ESP_LOGD("chbsp_hand_espidf",
-           "In function {ioport_set_pin_level_through_gpio}: Set gpio num: %d "
-           "to %s.",
-           (int)gpio_num, (val == CHIRP_GPIO_LEVEL_HIGH) ? "high" : "low");
+  // ESP_LOGD("chbsp_hand_espidf",
+  //          "In function {ioport_set_pin_level_through_gpio}: Set gpio num: %d "
+  //          "to %s.",
+  //          (int)gpio_num, (val == CHIRP_GPIO_LEVEL_HIGH) ? "high" : "low");
 }
 
 /**
@@ -560,8 +560,10 @@ static void find_sensors(void)
  */
 static void IRAM_ATTR chirp_isr_callback(void* ch_io_cb_para)
 {
-  esp_log_level_t log_level = esp_log_level_get("chbsp_hand_espidf");
-  esp_log_level_set("chbsp_hand_espidf", ESP_LOG_NONE);
+  /* Only normal gpio on esp32-s3 will triggered this function */
+  /* Disable these to avoid `esp_log_impl_lock` racing */
+  // esp_log_level_t log_level = esp_log_level_get("chbsp_hand_espidf");
+  // esp_log_level_set("chbsp_hand_espidf", ESP_LOG_NONE);
 
   ch_io_int_callback_parameter_t* para =
       (ch_io_int_callback_parameter_t*)ch_io_cb_para;
@@ -581,7 +583,7 @@ static void IRAM_ATTR chirp_isr_callback(void* ch_io_cb_para)
     func_ptr(para->grp_ptr, para->io_index);
   }
 
-  esp_log_level_set("chbsp_hand_espidf", log_level);
+  // esp_log_level_set("chbsp_hand_espidf", log_level);
 }
 
 /* interrupt config */
