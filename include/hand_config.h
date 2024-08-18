@@ -78,8 +78,9 @@
 #define HAND_MS_VL53L1X_DEFAULT_MEASURE_PERIOD (100)
 
 // CH101 related
-#define HAND_MS_CH101_QUEUE_MAX_DELAY        (50)
-#define HAND_MS_CH101_DEFAULT_MEASURE_PERIOD (100)
+#define HAND_MS_CH101_QUEUE_MAX_DELAY (50)
+/* XXX: I don't know why but this value will be doubled at somewhere? */
+#define HAND_MS_CH101_DEFAULT_MEASURE_PERIOD (50)
 #define HAND_MS_CH101_SEND_DATA              (500)
 
 // RGB LED related

@@ -197,17 +197,37 @@ static esp_err_t hand_i2c_bus_and_device_init(
   }
 
   ESP_LOGI(TAG, "Sensor\tType \t   Freq\t\t RTC Cal \tFirmware");
+  char rtc_buffer[128];
+
   for (uint8_t dev_num = 0; dev_num < num_ports; dev_num++)
   {
     ch_dev_t* dev_ptr = ch_get_dev_ptr(ch101_group_p, dev_num);
 
     if (ch_sensor_is_connected(dev_ptr))
     {
-      ESP_LOGI(
-          TAG, "%d\tCH%d\t %u Hz\t%u@%ums\t%s", dev_num,
-          ch_get_part_number(dev_ptr), (unsigned int)ch_get_frequency(dev_ptr),
-          ch_get_rtc_cal_result(dev_ptr), ch_get_rtc_cal_pulselength(dev_ptr),
-          ch_get_fw_version_string(dev_ptr));
+      /* disable the device if RTC CAL result seems wrong */
+      uint16_t _rtc_cal_result = ch_get_rtc_cal_result(dev_ptr);
+      const uint16_t rtc_cal_lowerbond = 2500;
+      const uint16_t rtc_cal_upperbond = 3000;
+      // a raw range
+      bool _rtc_cal_ok = (_rtc_cal_result >= rtc_cal_lowerbond &&
+                          _rtc_cal_result <= rtc_cal_upperbond);
+      sprintf(rtc_buffer, "%d      \tCH%d\t %u Hz\t%u@%ums\t%s", dev_num,
+              ch_get_part_number(dev_ptr),
+              (unsigned int)ch_get_frequency(dev_ptr), _rtc_cal_result,
+              ch_get_rtc_cal_pulselength(dev_ptr),
+              ch_get_fw_version_string(dev_ptr));
+
+      if (!_rtc_cal_ok)
+      {
+        /* critical error (treated as no connected) */
+        dev_ptr->sensor_connected = 0;
+        ESP_LOGE(TAG, "%s", rtc_buffer);
+      }
+      else
+      {
+        ESP_LOGI(TAG, "%s", rtc_buffer);
+      }
     }
     else
     {
@@ -269,7 +289,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
       /* If sensor will be free-running, set internal sample interval */
       if (dev_config.mode == CH_MODE_FREERUN)
       {
-        dev_config.sample_interval = MEASUREMENT_INTERVAL_MS;
+        dev_config.sample_interval = HAND_MS_CH101_DEFAULT_MEASURE_PERIOD;
       }
       else
       {
@@ -752,5 +772,6 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
     // gpio_dump_all_io_configuration();
   }
 
+  ESP_LOGI(TAG, "hand init completed!");
   return ret;
 }

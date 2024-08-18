@@ -100,17 +100,5 @@ typedef struct hand_devices_handle_t
 
 } hand_devices_handle_t;
 
-typedef struct hand_global_states_t
-{
-  /* semaphore managements (data synchronization) */
-
-  /* binary states */
-  bool hand_usb_plug_state;  // default to HAND_VBUS_DETECT_UNPLUG
-  bool hand_bat_plug_state;  // default to HAND_BATTERY_DETECT_UNPLUG
-
-  /* multiple states */
-
-} hand_global_states_t;
-
 /* Public API */
 esp_err_t hand_init(const char* ssid, const char* password, bool init_dev);
