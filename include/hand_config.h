@@ -57,6 +57,7 @@
 // NanoPB stream buffer size
 
 #define HAND_SIZE_NANOPB_BUFFER_VL53L1X (2048)
+#define HAND_SIZE_NANOPB_BUFFER_CH101   (2048)
 
 // Queue size (size of the queue used for buffering real-time data before
 // storing it in the ping-pong buffer.)
@@ -67,5 +68,16 @@
 /* Time related (ms) [delay, polling...] */
 
 // VL53L1X related
+#define HAND_MS_VL53L1X_QUEUE_MAX_DELAY              (50)
 #define HAND_MS_VL53L1X_NEW_DATA_READY_POLL_DURATION (100)
 #define HAND_MS_VL53L1X_SEND_DATA                    (500)
+// This must be uint16_t [20, 1000]
+#define HAND_MS_VL53L1X_DEFAULT_TIMING_BUDGET (50)
+// This argument should be equal or larger than (VL53L1X_TIMING_BUDGET_MS +
+// 4)
+#define HAND_MS_VL53L1X_DEFAULT_MEASURE_PERIOD (100)
+
+// CH101 related
+#define HAND_MS_CH101_QUEUE_MAX_DELAY        (50)
+#define HAND_MS_CH101_DEFAULT_MEASURE_PERIOD (100)
+#define HAND_MS_CH101_SEND_DATA              (500)

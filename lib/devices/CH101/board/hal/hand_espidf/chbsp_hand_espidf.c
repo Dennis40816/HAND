@@ -21,9 +21,9 @@
 
 /* header with board-specific defines */
 #include "conf_hand_espidf_board.h"
-#include "chirp_board_config.h"
 
 /* chirp related lib */
+#include "chirp_board_config.h"  // some macros defined in "conf_hand_espidf_board.h"
 #include "chirp_smartsonic.h"  // header with board-specific defines
 #include "soniclib.h"          // Chirp SonicLib API definitions
 #include "chirp_bsp.h"
@@ -788,8 +788,8 @@ void chbsp_group_set_io_dir_out(ch_group_t* grp_ptr)
     }
     else
     {
-      ESP_LOGE("chbsp_group_set_io_dir_out", "ch sensor %d is not connected!",
-               dev_num);
+      // ESP_LOGE("chbsp_group_set_io_dir_out", "ch sensor %d is not connected!",
+      //          dev_num);
     }
   }
 }
@@ -820,8 +820,8 @@ void chbsp_group_set_io_dir_in(ch_group_t* grp_ptr)
     }
     else
     {
-      ESP_LOGE("chbsp_group_set_io_dir_in", "ch sensor %d is not connected!",
-               dev_num);
+      // ESP_LOGE("chbsp_group_set_io_dir_in", "ch sensor %d is not connected!",
+      //          dev_num);
     }
   }
 }
@@ -919,8 +919,8 @@ void chbsp_group_io_clear(ch_group_t* grp_ptr)
     }
     else
     {
-      ESP_LOGE("chbsp_group_io_clear", "ch sensor %d is not connected!",
-               dev_num);
+      // ESP_LOGE("chbsp_group_io_clear", "ch sensor %d is not connected!",
+      //          dev_num);
     }
   }
 }
@@ -952,7 +952,7 @@ void chbsp_group_io_set(ch_group_t* grp_ptr)
     }
     else
     {
-      ESP_LOGE("chbsp_group_io_set", "ch sensor %d is not connected!", dev_num);
+      // ESP_LOGE("chbsp_group_io_set", "ch sensor %d is not connected!", dev_num);
     }
   }
 }
@@ -1004,8 +1004,8 @@ void chbsp_io_interrupt_enable(ch_dev_t* dev_ptr)
   }
   else
   {
-    ESP_LOGE("chbsp_io_interrupt_enable", "ch sensor %d is not connected!",
-             dev_num);
+    // ESP_LOGE("chbsp_io_interrupt_enable", "ch sensor %d is not connected!",
+    //          dev_num);
   }
 }
 
@@ -1057,8 +1057,8 @@ void chbsp_io_interrupt_disable(ch_dev_t* dev_ptr)
   }
   else
   {
-    ESP_LOGE("chbsp_io_interrupt_disable", "ch sensor %d is not connected!",
-             dev_num);
+    // ESP_LOGE("chbsp_io_interrupt_disable", "ch sensor %d is not connected!",
+    //          dev_num);
   }
 }
 
@@ -1088,7 +1088,7 @@ void chbsp_io_clear(ch_dev_t* dev_ptr)
   }
   else
   {
-    ESP_LOGE("chbsp_io_clear", "ch sensor %d is not connected!", dev_num);
+    // ESP_LOGE("chbsp_io_clear", "ch sensor %d is not connected!", dev_num);
   }
 }
 
@@ -1118,7 +1118,7 @@ void chbsp_io_set(ch_dev_t* dev_ptr)
   }
   else
   {
-    ESP_LOGE("chbsp_io_set", "ch sensor %d is not connected!", dev_num);
+    // ESP_LOGE("chbsp_io_set", "ch sensor %d is not connected!", dev_num);
   }
 }
 

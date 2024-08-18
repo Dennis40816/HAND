@@ -57,6 +57,7 @@ enum HandDataType
   INT64 = 3;
   FLOAT = 4;
   DOUBLE = 5;
+  CH101_SIMPLE = 6;
 }
 
 message HandDataMsg {

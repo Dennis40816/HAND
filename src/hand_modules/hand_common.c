@@ -62,12 +62,12 @@ static void vl53l1x_init(VL53L1_DEV dev, bool calibration_en)
   status = VL53L1_SetDistanceMode(dev, VL53L1_DISTANCEMODE_SHORT);
   ESP_LOGI(TAG, "Status of `VL53L1_SetDistanceMode` is: {%d}", status);
   status = VL53L1_SetMeasurementTimingBudgetMicroSeconds(
-      dev, HAND_VL53L1X_DEFAULT_TIMING_BUDGET_MS * 1000);
+      dev, HAND_MS_VL53L1X_DEFAULT_TIMING_BUDGET * 1000);
   ESP_LOGI(TAG,
            "Status of `VL53L1_SetMeasurementTimingBudgetMicroSeconds` is: {%d}",
            status);
   status = VL53L1_SetInterMeasurementPeriodMilliSeconds(
-      dev, HAND_VL53L1X_DEFAULT_MEASURE_PERIOD_MS);
+      dev, HAND_MS_VL53L1X_DEFAULT_MEASURE_PERIOD);
   ESP_LOGI(TAG,
            "Status of `VL53L1_SetInterMeasurementPeriodMilliSeconds` is: {%d}",
            status);
@@ -164,7 +164,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
 
   uint8_t chirp_err = 0;
 
-  for (uint8_t dev_num = 0; dev_num < num_ports; dev_num++)
+  for (uint8_t dev_num = 0; dev_num < num_ports; ++dev_num)
   {
     ch_dev_t* dev_ptr = ch101_devs_p + dev_num;  // init struct in array
 
@@ -204,10 +204,14 @@ static esp_err_t hand_i2c_bus_and_device_init(
     if (ch_sensor_is_connected(dev_ptr))
     {
       ESP_LOGI(
-          TAG, "%d\tCH%d\t %u Hz\t%u@%ums\t\t%s", dev_num,
+          TAG, "%d\tCH%d\t %u Hz\t%u@%ums\t%s", dev_num,
           ch_get_part_number(dev_ptr), (unsigned int)ch_get_frequency(dev_ptr),
           ch_get_rtc_cal_result(dev_ptr), ch_get_rtc_cal_pulselength(dev_ptr),
           ch_get_fw_version_string(dev_ptr));
+    }
+    else
+    {
+      ESP_LOGE(TAG, "ch %d not connected!", dev_num);
     }
   }
 
@@ -303,25 +307,35 @@ static esp_err_t hand_i2c_bus_and_device_init(
       if (!chirp_err)
       {
         ultrasound_display_config_info(dev_ptr);
-      }
-      else
-      {
-        ESP_LOGI(TAG, "Device %d: Error during ch_set_config()\n", dev_num);
-      }
 
-      /* Turn on an LED to indicate device connected */
-      if (!chirp_err)
-      {
+        /* Turn on an LED to indicate device connected */
         chbsp_led_on(dev_num);
         ESP_LOGI(TAG, "CH101 sensor(s): {%d} config done!", dev_num);
       }
+      else
+      {
+        ESP_LOGE(TAG, "Device %d: Error during ch_set_config()\n", dev_num);
+      }
     }
   }
+
+  ESP_LOGI(TAG, "CH101 active dev num in hex: 0x%02X",
+           hand_global_ch101_active_dev_num);
+  ESP_LOGI(TAG, "CH101 connected dev num is: %d", num_connected_sensors);
+
+  /* TODO: check this is needed or not */
+  ch_set_rx_pretrigger(ch101_group_p, RX_PRETRIGGER_ENABLE);
+
+  /* add callbacks */
+  ch_io_int_callback_set(ch101_group_p, hand_cb_ch101_sensed);
+  ch_io_complete_callback_set(ch101_group_p, hand_cb_ch101_io_completed);
+
+  return ret;
+
   /**
    * @brief 目前缺少了
    *
    * @note - callback 註冊 -> app main?
-   * @note - ch_set_rx_pretrigger -> need?
    * @note - 啟動 periodic timer -> app_main
    *
    */
@@ -620,18 +634,13 @@ static esp_err_t hand_isr_init()
   return ret;
 }
 
-esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
+static esp_err_t hand_wifi_and_terminal_init(const char* ssid,
+                                             const char* password)
 {
   esp_err_t ret = ESP_OK;
 
-  /* wait for system starts if usb plugged in */
-  if (usb_serial_jtag_is_connected())
-  {
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
-
+  // Mount the Wi-Fi module
   ret = hand_wifi_module_mount(NULL);
-
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "hand_wifi_module_mount failed");
@@ -640,11 +649,13 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
 
   hand_wifi_t wifi_settings;
 
+  // Set Wi-Fi handle with provided SSID and password, or get the default handle
   ret = hand_wifi_module_set_handle(&wifi_settings, ssid, password);
 
-  // OR
-
+  // If ssid and password are not provided, you can use default handle
   // ret = hand_wifi_module_get_default_handle(&wifi_settings);
+
+  // OR
 
   /* Note: modify the ssid and password according to your config */
   // const char* new_ssid = "NEW_SSID";
@@ -655,7 +666,7 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
 
   if (ret != ESP_OK)
   {
-    ESP_LOGE(TAG, "hand_wifi_module_get_default_handle failed");
+    ESP_LOGE(TAG, "hand_wifi_module_set_handle failed");
     return ret;
   }
 
@@ -663,17 +674,18 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
   ESP_LOGI(TAG, "Default Wi-Fi Password: %s",
            (char*)&wifi_settings.config.password);
 
+  // Update Wi-Fi handler (if necessary)
   hand_wifi_module_update_handler(NULL);
 
-  /* should connect */
+  // Initialize the Wi-Fi module and connect
   ret = hand_wifi_module_init(&wifi_settings, true);
-
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "hand_wifi_module_init failed");
     return ret;
   }
 
+  // Initialize terminal settings
   hand_terminal_t terminal_setting = {
       .local_server = {.server_type = HAND_UDP_SERVER,
                        .fcntl_flag = O_NONBLOCK,
@@ -682,20 +694,42 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
       .dest_addr = {.ip = HAND_DEFAULT_LOG_SERVER_IP,
                     .port = HAND_DEFAULT_LOG_SERVER_PORT}};
 
+  // Mount the terminal module
   ret = hand_terminal_module_mount(NULL);
-
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "hand_terminal_module_mount failed");
     return ret;
   }
 
+  // Initialize the terminal module
   ret = hand_terminal_module_init(&terminal_setting);
-
   if (ret != ESP_OK)
   {
     ESP_LOGE(TAG, "hand_terminal_module_init failed");
     return ret;
+  }
+
+  return ret;
+}
+
+esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
+{
+  esp_err_t ret = ESP_OK;
+
+  /* wait for system starts if usb plugged in */
+  if (usb_serial_jtag_is_connected())
+  {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+
+  ret = hand_wifi_and_terminal_init(ssid, password);
+
+  if (ret != ESP_OK)
+  {
+    ESP_LOGW(TAG,
+             "`hand_wifi_and_terminal_init` failed. But won't stop other init "
+             "procedure!");
   }
 
   /* init global variable */

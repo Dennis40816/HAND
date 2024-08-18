@@ -37,6 +37,12 @@
 #define HAND_TASK_SS_VL53L1X_FROM_QUEUE_TO_PPB (4096)
 #define HAND_TASK_SS_VL53L1X_SEND_DATA         (8192)
 
+// CH101 related
+
+#define HAND_TASK_SS_CH101_COLLECT_DATA      (4096)
+#define HAND_TASK_SS_CH101_FROM_QUEUE_TO_PPB (4096)
+#define HAND_TASK_SS_CH101_SEND_DATA         (8192)
+
 /* Public struct */
 
 /**
@@ -44,12 +50,22 @@
  *
  */
 typedef int hand_task_arg_vl53l1x_send_data_t;
+typedef int hand_task_arg_ch101_send_data_t;
 
 typedef struct hand_task_handle_t
 {
+  // VL53L1X related
+
   TaskHandle_t vl53l1x_collect_data_handle;
   TaskHandle_t vl53l1x_from_queue_to_ppb_handle;
   TaskHandle_t vl53l1x_send_data_handle;
+
+  // CH101 related
+
+  TaskHandle_t ch101_collect_data_handle;
+  TaskHandle_t ch101_from_queue_to_ppb_handle;
+  TaskHandle_t ch101_send_data_handle;
+
   /* TODO: not implement yet */
 } hand_task_handle_t;
 
@@ -97,6 +113,8 @@ void hand_task_vl53l1x_from_queue_to_ppb(void* __attribute__((unused)) arg);
  * control information for this task.
  */
 void hand_task_vl53l1x_send_data(void* arg);
+
+void hand_task_ch101_collect_data(void* __attribute__((unused)) arg);
 
 void hand_task_ch101_from_queue_to_ppb(void* __attribute__((unused)) arg);
 

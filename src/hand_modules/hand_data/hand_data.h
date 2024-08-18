@@ -52,6 +52,7 @@
 #define HAND_MSG_BYTES_COUNT_PLACEHOLDER_VALUE (1)
 
 /* public struct */
+
 typedef struct hand_vl53l1x_data_element_t
 {
   int64_t timestamp;
@@ -60,16 +61,6 @@ typedef struct hand_vl53l1x_data_element_t
   float data2;  // VL53L1X_2
 } hand_vl53l1x_data_element_t;
 
-typedef struct hand_chx01_data_element_t
-{
-  int64_t timestamp;
-  /* TODO: use array? */
-  float data1;  // CH101_1
-  float data2;  // CH101_2
-  float data3;  // CH101_3
-  float data4;  // CH101_4
-} hand_chx01_data_element_t;
-
 typedef struct hand_vl53l1x_data_t
 {
   int64_t timestamps[HAND_SIZE_PPB_VL53L1X];
@@ -77,13 +68,26 @@ typedef struct hand_vl53l1x_data_t
   float data2[HAND_SIZE_PPB_VL53L1X];
 } hand_vl53l1x_data_t;
 
+typedef struct hand_chx01_simple_data_unit_t
+{
+  uint16_t sample_num;
+  uint16_t amp;
+  float range;
+} hand_chx01_simple_data_unit_t;
+
+/* for queue */
+typedef struct hand_chx01_group_data_element_t
+{
+  int64_t timestamp;
+  hand_chx01_simple_data_unit_t data[HAND_DEV_MAX_NUM_CH101];
+} hand_chx01_group_data_element_t;
+
+/* for nanopb */
 typedef struct hand_chx01_data_t
 {
   int64_t timestamps[HAND_SIZE_PPB_CH101];
-  float data1[HAND_SIZE_PPB_CH101];
-  float data2[HAND_SIZE_PPB_CH101];
-  float data3[HAND_SIZE_PPB_CH101];
-  float data4[HAND_SIZE_PPB_CH101];
+  hand_chx01_simple_data_unit_t data[HAND_DEV_MAX_NUM_CH101]
+                                    [HAND_SIZE_PPB_CH101];
 } hand_chx01_data_t;
 
 /* ping pong buffer struct (PPB) */

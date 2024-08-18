@@ -38,6 +38,10 @@ void app_main(void)
                 HAND_TASK_SS_VL53L1X_SEND_DATA, &client_socket,
                 HAND_TASK_PRIORITY_VL53L1X_SEND_DATA,
                 &hand_global_task_handle.vl53l1x_send_data_handle);
+    xTaskCreate(hand_task_ch101_send_data, "hand_task_ch101_send_data",
+                HAND_TASK_SS_CH101_SEND_DATA, &client_socket,
+                HAND_TASK_PRIORITY_CH101_SEND_DATA,
+                &hand_global_task_handle.ch101_send_data_handle);
   }
   else
   {
@@ -55,6 +59,17 @@ void app_main(void)
               HAND_TASK_SS_VL53L1X_COLLECT_DATA, NULL,
               HAND_TASK_PRIORITY_VL53L1X_COLLECT_DATA,
               &hand_global_task_handle.vl53l1x_collect_data_handle);
+
+  xTaskCreate(hand_task_ch101_from_queue_to_ppb,
+              "hand_task_ch101_from_queue_to_ppb",
+              HAND_TASK_SS_CH101_FROM_QUEUE_TO_PPB, NULL,
+              HAND_TASK_PRIORITY_CH101_FROM_QUEUE_TO_PPB,
+              &hand_global_task_handle.ch101_from_queue_to_ppb_handle);
+
+  xTaskCreate(hand_task_ch101_collect_data, "hand_task_ch101_collect_data",
+              HAND_TASK_SS_CH101_COLLECT_DATA, NULL,
+              HAND_TASK_PRIORITY_CH101_COLLECT_DATA,
+              &hand_global_task_handle.ch101_collect_data_handle);
 
   /* make RGB LED blue */
   led_strip_set_pixel(hand_global_devs_handle.rgb_led_handle,

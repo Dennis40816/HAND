@@ -41,30 +41,31 @@ extern hand_task_handle_t hand_global_task_handle;
 
 /* CH101 related */
 
-extern uint8_t hand_global_ch101_active_dev_num;
-extern uint8_t hand_global_ch101_triggered_dev_num;
+extern volatile uint8_t hand_global_ch101_active_dev_num;
+extern volatile uint8_t hand_global_ch101_triggered_dev_num;
+extern volatile uint8_t hand_global_ch101_connected_dev_num;
 
 /* Ping pong buffer related */
 
 // VL53L1X related
 
-extern SemaphoreHandle_t hand_global_vl53l1x_ping_pong_mutex;
-extern hand_ppb_vl53l1x_data_t hand_global_vl53l1x_ping_pong_buffer;
+extern volatile SemaphoreHandle_t hand_global_vl53l1x_ping_pong_mutex;
+extern volatile hand_ppb_vl53l1x_data_t hand_global_vl53l1x_ping_pong_buffer;
 
 // CH101 related
 
-extern SemaphoreHandle_t hand_global_ch101_ping_pong_mutex;
-extern hand_ppb_ch101_data_t hand_global_ch101_ping_pong_buffer;
+extern volatile SemaphoreHandle_t hand_global_ch101_ping_pong_mutex;
+extern volatile hand_ppb_ch101_data_t hand_global_ch101_ping_pong_buffer;
 
 /* Queue related */
 
 // VL53L1X related
 
-extern QueueHandle_t hand_global_vl53l1x_data_queue;
+extern volatile QueueHandle_t hand_global_vl53l1x_data_queue;
 
 // CH101 related
 
-extern QueueHandle_t hand_global_ch101_data_queue;
+extern volatile QueueHandle_t hand_global_ch101_data_queue;
 
 /* Event group (EG) related */
 
@@ -75,16 +76,18 @@ extern QueueHandle_t hand_global_ch101_data_queue;
 #define HAND_EG_VL53L1X_1_FAILURE_BIT    (1 << 2)
 #define HAND_EG_VL53L1X_2_FAILURE_BIT    (1 << 3)
 
-extern EventGroupHandle_t hand_global_vl53l1x_event_group;
+extern volatile EventGroupHandle_t hand_global_vl53l1x_event_group;
 
 // CH101 related
 
-#define HAND_EG_CH101_1_DATA_READY_BIT (1 << 0)
-#define HAND_EG_CH101_2_DATA_READY_BIT (1 << 1)
-#define HAND_EG_CH101_3_DATA_READY_BIT (1 << 2)
-#define HAND_EG_CH101_4_DATA_READY_BIT (1 << 3)
+#define HAND_EG_CH101_1_DATA_READY_BIT              (1 << 0)
+#define HAND_EG_CH101_2_DATA_READY_BIT              (1 << 1)
+#define HAND_EG_CH101_3_DATA_READY_BIT              (1 << 2)
+#define HAND_EG_CH101_4_DATA_READY_BIT              (1 << 3)
+#define HAND_EG_CH101_ALL_ACTIVE_DEV_DATA_READY_BIT (1 << 4)
+#define HAND_EG_CH101_IQ_DATA_READY                 (1 << 5)
 
-extern EventGroupHandle_t hand_global_ch101_event_group;
+extern volatile EventGroupHandle_t hand_global_ch101_event_group;
 
 /* public API */
 
@@ -95,5 +98,28 @@ extern EventGroupHandle_t hand_global_ch101_event_group;
  */
 esp_err_t hand_global_var_init();
 
-/* Callbacks IRAM related */
+/* Callbacks related */
+
+// VL53L1X related
 void IRAM_ATTR hand_cb_vl53l1x_sensed(void* arg);
+
+// CH101 related
+void IRAM_ATTR hand_cb_ch101_sensed(ch_group_t* grp_ptr, uint8_t dev_num);
+
+/**
+ * @brief Non-blocking I/O complete callback routine
+ *
+ * This function is called by SonicLib's I2C DMA handling function when all
+ * outstanding non-blocking I/Q readouts have completed.
+ *
+ * This callback function is registered by the call to
+ * ch_io_complete_callback_set() in main().
+ *
+ * @note This callback is only used if READ_IQ_NONBLOCKING is defined to
+ *  select non-blocking I/Q readout in this application.
+ *
+ * @param grp_ptr
+ */
+void IRAM_ATTR hand_cb_ch101_io_completed(ch_group_t* grp_ptr);
+
+void IRAM_ATTR hand_cb_ch101_periodic_timer(void);

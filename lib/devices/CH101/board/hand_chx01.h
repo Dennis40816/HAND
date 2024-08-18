@@ -21,10 +21,26 @@
  * SOFTWARE.
  */
 
-#include "soniclib.h"			// Chirp SonicLib sensor API definitions
-#include "chirp_board_config.h"	// required header with basic device counts etc.
+#include "soniclib.h"            // Chirp SonicLib sensor API definitions
+#include "chirp_board_config.h"  // required header with basic device counts etc.
 #include "app_config.h"
 #include "app_version.h"
-#include "chirp_bsp.h"			// board support package function definitions
+#include "chirp_bsp.h"  // board support package function definitions
 #include "chirp_smartsonic.h"
 #include "ultrasound_display_config_info.h"
+
+/* Public struct */
+typedef struct hand_chirp_data_t
+{
+  uint32_t range;        // from ch_get_range()
+  uint16_t amplitude;    // from ch_get_amplitude()
+  uint16_t num_samples;  // from ch_get_num_samples()
+#ifdef READ_AMPLITUDE_DATA
+  uint16_t amp_data[DATA_MAX_NUM_SAMPLES];
+  // from ch_get_amplitude_data()
+#endif
+#ifdef READ_IQ_DATA
+  ch_iq_sample_t iq_data[DATA_MAX_NUM_SAMPLES];
+  // from ch_get_iq_data()
+#endif
+} hand_chirp_data_t;

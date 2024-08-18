@@ -253,12 +253,5 @@
 #define HAND_DEV_MAX_NUM_BMI323  (1)
 #define HAND_DEV_MAX_NUM_RGB_LED (1)
 
-/* VL53L1X related */
-// This must be uint16_t [20, 1000]
-#define HAND_VL53L1X_DEFAULT_TIMING_BUDGET_MS (50)
-// This argument should be equal or larger than (VL53L1X_TIMING_BUDGET_MS +
-// 4)
-#define HAND_VL53L1X_DEFAULT_MEASURE_PERIOD_MS (100)
-
 /* RGB_LED related */
 #define HAND_RGB_LED_INDEX (0)

@@ -61,7 +61,8 @@ typedef enum _HandDataType {
     HandDataType_INT32 = 2,
     HandDataType_INT64 = 3,
     HandDataType_FLOAT = 4,
-    HandDataType_DOUBLE = 5
+    HandDataType_DOUBLE = 5,
+    HandDataType_CH101_SIMPLE = 6
 } HandDataType;
 
 /* Struct definitions */
@@ -134,8 +135,8 @@ extern "C" {
 #define _HandChipInstance_ARRAYSIZE ((HandChipInstance)(HandChipInstance_TCA6408A_OTHER+1))
 
 #define _HandDataType_MIN HandDataType_UINT8
-#define _HandDataType_MAX HandDataType_DOUBLE
-#define _HandDataType_ARRAYSIZE ((HandDataType)(HandDataType_DOUBLE+1))
+#define _HandDataType_MAX HandDataType_CH101_SIMPLE
+#define _HandDataType_ARRAYSIZE ((HandDataType)(HandDataType_CH101_SIMPLE+1))
 
 #define HandDataMsg_source_ENUMTYPE HandChipInstance
 #define HandDataMsg_data_type_ENUMTYPE HandDataType

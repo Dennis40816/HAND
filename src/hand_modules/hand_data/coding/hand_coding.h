@@ -23,9 +23,10 @@
 
 /* This file is for encode, decode and msg related */
 
-#include "pb_encode.h"
 #include "hand_data/proto/hand_data.pb.h"
+#include "hand_data/hand_data.h"
 
+#include "pb_encode.h"
 #include "esp_timer.h"
 
 /* public struct */
@@ -43,9 +44,24 @@ typedef struct hand_timestamps_arr_arg_t
 
 typedef struct hand_data_msgs_arr_arg_t
 {
-  HandDataMsg** msgs_pp;
-  int count; // msg number
+  HandDataMsg **msgs_pp;
+  int count;  // msg number
 } hand_data_msgs_arr_arg_t;
+
+/* see hand_encode_active_data_msg_array */
+typedef struct hand_active_data_msgs_arr_arg_t
+{
+  HandDataMsg *msgs_p;
+  int max_count;
+  void *active_indicator;
+  HandDataType indicator_type;
+} hand_active_data_msgs_arr_arg_t;
+
+typedef struct hand_ch101_simple_data_arg_t
+{
+  hand_chx01_simple_data_unit_t *d_p;
+  int count;
+} hand_ch101_simple_data_arg_t;
 
 /* alias hand encode args */
 typedef hand_float_arr_arg_t hand_vl53l1x_data_arg_t;
@@ -62,18 +78,26 @@ bool hand_encode_timestamps_array(pb_ostream_t *stream, const pb_field_t *field,
 
 /* TODO: decode_timestamps_array */
 
+bool hand_encode_ch101_simple_data_array(pb_ostream_t *stream,
+                                         const pb_field_t *field,
+                                         void *const *arg);
+
 /**
- * @brief 
- * 
- * @param stream 
- * @param field 
- * @param arg 
- * @return true 
- * @return false 
+ * @brief
+ *
+ * @param stream
+ * @param field
+ * @param arg
+ * @return true
+ * @return false
  */
 bool hand_encode_data_msg_pointers_array(pb_ostream_t *stream,
                                          const pb_field_t *field,
                                          void *const *arg);
+
+bool hand_encode_active_data_msg_pointers_array(pb_ostream_t *stream,
+                                                const pb_field_t *field,
+                                                void *const *arg);
 
 bool hand_overwrite_buf_bytes_count(uint8_t *buf, uint32_t bytes_count);
 
