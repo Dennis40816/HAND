@@ -12,9 +12,11 @@ from google.protobuf.json_format import MessageToJson
 # enable this when you want to debug
 DEBUG_ENABLE = False
 
+
 def debug_print(arg):
     if DEBUG_ENABLE:
         print(arg)
+
 
 HOST = "0.0.0.0"
 PORT = 8055
@@ -30,6 +32,7 @@ data_type_map = {
     hand_data_pb2.INT64: "INT64",
     hand_data_pb2.FLOAT: "FLOAT",
     hand_data_pb2.DOUBLE: "DOUBLE",
+    hand_data_pb2.CH101_SIMPLE: "CH101_SIMPLE",
 }
 
 # Source mapping dictionary
@@ -57,6 +60,7 @@ source_map = {
 
 log_queue = queue.Queue()
 
+
 def get_max_index(log_dir):
     max_index = -1
     pattern = re.compile(r"hand_msg_(\d+)\.json")
@@ -68,10 +72,11 @@ def get_max_index(log_dir):
                 max_index = index
     return max_index
 
+
 # log function
 def log_writer_thread(log_dir="logs"):
-    message_num = 0;
-    
+    message_num = 0
+
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
@@ -80,32 +85,33 @@ def log_writer_thread(log_dir="logs"):
 
     # use a+
     with open(filename, "a+") as log_file:
-        log_file.write('[')
-        
+        log_file.write("[")
+
         # A forever loop for log queue
         while True:
             msg = log_queue.get()
             if msg is None:
-                print('log recv None. Leaving log...')
+                print("log recv None. Leaving log...")
                 break
             message_num += 1
-            log_file.write('\n')
+            log_file.write("\n")
             json.dump(msg, log_file, indent=2)
-            log_file.write(',')
+            log_file.write(",")
             log_file.flush()  # Flush the file buffer to ensure data is written to disk
-            
+
             # let user know how many messages have been logged
             if message_num % 10 == 0:
                 print(f"Logged {message_num} messages")
-        
+
         # leaving
         with open(filename, "rb+") as log_file:
             log_file.seek(-1, os.SEEK_END)
-            if log_file.read(1) == b',':
+            if log_file.read(1) == b",":
                 log_file.seek(-1, os.SEEK_END)
             log_file.truncate()
-            log_file.write(b'\n]')
+            log_file.write(b"\n]")
             log_file.flush()
+
 
 def accept(sock, mask):
     conn, addr = sock.accept()
@@ -161,9 +167,6 @@ def read(conn, mask):
             msg = hand_data_pb2.HandMsg()
             msg.ParseFromString(complete_data)
 
-            # # Print the deserialized message
-            # print(f"Received message: {msg}")
-            
             msg_dict = MessageToJson(msg)
             tmp_json_obj = json.loads(msg_dict)
 
@@ -177,30 +180,10 @@ def read(conn, mask):
                 debug_print(f"Data Count: {data_msg.data_count}")
                 debug_print(f"Timestamps: {data_msg.timestamps}")
 
-                # Decode data based on data_type
-                data_format = ""
-                if data_msg.data_type == hand_data_pb2.UINT8:
-                    data_format = f"{data_msg.data_count}B"
-                elif data_msg.data_type == hand_data_pb2.UINT16:
-                    data_format = f"{data_msg.data_count}H"
-                elif data_msg.data_type == hand_data_pb2.INT32:
-                    data_format = f"{data_msg.data_count}i"
-                elif data_msg.data_type == hand_data_pb2.INT64:
-                    data_format = f"{data_msg.data_count}q"
-                elif data_msg.data_type == hand_data_pb2.FLOAT:
-                    data_format = f"{data_msg.data_count}f"
-                elif data_msg.data_type == hand_data_pb2.DOUBLE:
-                    data_format = f"{data_msg.data_count}d"
+                # Decode data
+                decoded_data = decode_data(data_msg)
+                tmp_json_obj["dataWrapper"]["dataMsgs"][index]["data"] = decoded_data
 
-                if data_format:
-                    decoded_data = struct.unpack(data_format, data_msg.data)
-                    debug_print(f"Decoded Data: {decoded_data}")
-                    tmp_json_obj["dataWrapper"]["dataMsgs"][index]["data"] = list(decoded_data)
-                    
-                else:
-                    print("Unknown data type")
-
-                        
             log_queue.put(tmp_json_obj)
 
         except Exception as e:
@@ -211,6 +194,72 @@ def read(conn, mask):
         print(f"Exception during read: {e}")
         sel.unregister(conn)
         conn.close()
+
+
+def decode_data(data_msg):
+    """Decode data based on data_type using either base_decode or custom_decode."""
+    simple_data_types = [
+        hand_data_pb2.UINT8,
+        hand_data_pb2.UINT16,
+        hand_data_pb2.INT32,
+        hand_data_pb2.INT64,
+        hand_data_pb2.FLOAT,
+        hand_data_pb2.DOUBLE,
+    ]
+
+    if data_msg.data_type in simple_data_types:
+        data_format_map = {
+            hand_data_pb2.UINT8: f"{data_msg.data_count}B",
+            hand_data_pb2.UINT16: f"{data_msg.data_count}H",
+            hand_data_pb2.INT32: f"{data_msg.data_count}i",
+            hand_data_pb2.INT64: f"{data_msg.data_count}q",
+            hand_data_pb2.FLOAT: f"{data_msg.data_count}f",
+            hand_data_pb2.DOUBLE: f"{data_msg.data_count}d",
+        }
+        data_format = data_format_map.get(data_msg.data_type, "")
+        return base_decode(data_format, data_msg.data)
+
+    elif data_msg.data_type == hand_data_pb2.CH101_SIMPLE:
+        return custom_decode(data_msg.data_type, data_msg.data)
+
+    else:
+        print(f"Unknown data type: {data_msg.data_type}")
+        return []
+
+
+def base_decode(data_format, data):
+    try:
+        decoded_data = struct.unpack(data_format, data)
+        return list(decoded_data)
+    except struct.error as e:
+        print(f"Error in base_decode: {e}")
+        return []
+
+
+def custom_decode(data_type, data):
+    if data_type == hand_data_pb2.CH101_SIMPLE:
+        struct_format = "HHf"  # 對應 hand_chx01_simple_data_unit_t 中的 sample_num, amp, range
+        unit_size = struct.calcsize(struct_format)
+        
+        # 初始化字典，每個 key 對應一個列表
+        decoded_data = {
+            "sample_num": [],
+            "amp": [],
+            "range": []
+        }
+
+        for i in range(0, len(data), unit_size):
+            unit_data = struct.unpack(struct_format, data[i:i + unit_size])
+            decoded_data["sample_num"].append(unit_data[0])
+            decoded_data["amp"].append(unit_data[1])
+            decoded_data["range"].append(unit_data[2])
+
+        return [decoded_data]  # 返回包含一個字典的列表
+
+    else:
+        print(f"Unknown custom data type: {data_type}")
+        return []
+
 
 
 def print_full_line(char="#"):
@@ -225,7 +274,7 @@ def main():
     # start logging thread
     log_thread = threading.Thread(target=log_writer_thread)
     log_thread.start()
-    
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((HOST, PORT))
     sock.listen()
