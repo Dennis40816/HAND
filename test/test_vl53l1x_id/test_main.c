@@ -1,4 +1,3 @@
-#include "hand_common.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "tca6408a.h"
