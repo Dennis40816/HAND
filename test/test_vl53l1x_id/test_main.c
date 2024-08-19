@@ -1,5 +1,7 @@
 #include "driver/gpio.h"
 #include "driver/i2c.h"
+#include "esp_log.h"
+
 #include "tca6408a.h"
 #include "unity.h"
 
