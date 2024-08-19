@@ -8,6 +8,7 @@ import os
 import re
 import json
 from google.protobuf.json_format import MessageToJson
+from datetime import datetime
 
 # enable this when you want to debug
 DEBUG_ENABLE = False
@@ -83,6 +84,11 @@ def log_writer_thread(log_dir="logs"):
     index = get_max_index(log_dir) + 1
     filename = os.path.join(log_dir, f"hand_msg_{index:02d}.json")
 
+    # add a timer
+    LOG_EVERY_N_MSGS = 10
+    last_time = datetime.now()
+    current_time = datetime.now()
+
     # use a+
     with open(filename, "a+") as log_file:
         log_file.write("[")
@@ -100,8 +106,11 @@ def log_writer_thread(log_dir="logs"):
             log_file.flush()  # Flush the file buffer to ensure data is written to disk
 
             # let user know how many messages have been logged
-            if message_num % 10 == 0:
-                print(f"Logged {message_num} messages")
+            if message_num % LOG_EVERY_N_MSGS == 0:
+                current_time = datetime.now()
+                time_diff = (current_time - last_time).total_seconds()
+                print(f"Logged {message_num} messages, {LOG_EVERY_N_MSGS} msgs took {time_diff:.2f}")
+                last_time = current_time
 
         # leaving
         with open(filename, "rb+") as log_file:
