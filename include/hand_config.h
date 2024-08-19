@@ -57,7 +57,7 @@
 // NanoPB stream buffer size
 
 #define HAND_SIZE_NANOPB_BUFFER_VL53L1X (2048)
-#define HAND_SIZE_NANOPB_BUFFER_CH101   (2048)
+#define HAND_SIZE_NANOPB_BUFFER_CH101   (4096)
 
 // Queue size (size of the queue used for buffering real-time data before
 // storing it in the ping-pong buffer.)

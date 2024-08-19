@@ -365,6 +365,8 @@ static void _hand_ch101_handle_data_ready(ch_group_t* grp_ptr)
   uint8_t dev_num;
   int num_samples = 0;
 
+  new_ch101_data.timestamp = esp_timer_get_time();
+
   for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++)
   {
     uint32_t range = 0;
@@ -393,13 +395,13 @@ static void _hand_ch101_handle_data_ready(ch_group_t* grp_ptr)
         new_ch101_data.data[dev_num].amp = 0;
 
         // DEBUG only
-        ESP_LOGI(TAG, "Port {%d} target not found", dev_num);
+        ESP_LOGD(TAG, "Port {%d} target not found", dev_num);
       }
       else
       {
         new_ch101_data.data[dev_num].range = range / 32.0f;
         new_ch101_data.data[dev_num].amp = ch_get_amplitude(dev_ptr);
-        ESP_LOGI(TAG, "Port {%d}:  Range: %0.1f mm  Amp: %u", dev_num,
+        ESP_LOGD(TAG, "Port {%d}:  Range: %0.1f mm  Amp: %u", dev_num,
                  new_ch101_data.data[dev_num].range,
                  new_ch101_data.data[dev_num].amp);
       }
@@ -410,12 +412,11 @@ static void _hand_ch101_handle_data_ready(ch_group_t* grp_ptr)
       /* TODO: get amp data  */
 
       /* TODO: get IQ data */
-
-      /* push to queue */
-      xQueueSend(hand_global_ch101_data_queue, &new_ch101_data,
-                 pdMS_TO_TICKS(HAND_MS_CH101_QUEUE_MAX_DELAY));
     }
   }
+  /* push to queue */
+  xQueueSend(hand_global_ch101_data_queue, &new_ch101_data,
+             pdMS_TO_TICKS(HAND_MS_CH101_QUEUE_MAX_DELAY));
 }
 
 void hand_task_ch101_collect_data(void* __attribute__((unused)) arg)
@@ -547,14 +548,16 @@ void hand_task_ch101_send_data(void* arg)
           .count = send_data_index  // data number
       };
 
+      /* assign every row's first element to iterate every row array in encode
+       * function */
       hand_ch101_simple_data_arg_t ch101_data_args[HAND_DEV_MAX_NUM_CH101] = {
-          {.d_p = &(ppb_p->data[send_buffer_index].data[0]),
+          {.d_p = &(ppb_p->data[send_buffer_index].data[0][0]),
            .count = send_data_index},
-          {.d_p = &(ppb_p->data[send_buffer_index].data[1]),
+          {.d_p = &(ppb_p->data[send_buffer_index].data[1][0]),
            .count = send_data_index},
-          {.d_p = &(ppb_p->data[send_buffer_index].data[2]),
+          {.d_p = &(ppb_p->data[send_buffer_index].data[2][0]),
            .count = send_data_index},
-          {.d_p = &(ppb_p->data[send_buffer_index].data[3]),
+          {.d_p = &(ppb_p->data[send_buffer_index].data[3][0]),
            .count = send_data_index}};
 
       HandDataMsg data_msgs[HAND_DEV_MAX_NUM_CH101];
@@ -602,10 +605,11 @@ void hand_task_ch101_send_data(void* arg)
 
       int64_t end_time = esp_timer_get_time();
       int64_t encode_duration = end_time - start_time;
-      ESP_LOGI(TAG,
-               "VL53L1X message encoded successfully, size: %zu bytes, time: "
-               "%lld us",
-               stream.bytes_written, encode_duration);
+      ESP_LOGI(
+          TAG,
+          "CH101 simple message encoded successfully, size: %zu bytes, time: "
+          "%lld us",
+          stream.bytes_written, encode_duration);
       hand_overwrite_buf_bytes_count(buffer, stream.bytes_written);
 
       // Timing start - sending data
@@ -622,6 +626,7 @@ void hand_task_ch101_send_data(void* arg)
         ESP_LOGV(TAG, "Message sent (CH101) successfully");
       }
 
+      end_time = esp_timer_get_time();
       int64_t transmit_duration = end_time - start_time;
       ESP_LOGI(TAG, "CH101 Data transmitted successfully, time: %lld us",
                transmit_duration);
