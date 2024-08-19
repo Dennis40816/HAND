@@ -32,6 +32,6 @@ jobs:
     - name: Static code analysis
       run: pio check -e hand_firmware
     
-    ## enable this after hand_main firmware done
-    # - name: Run PlatformIO build
-    #   run: pio run -e hand_firmware
+    # enable this after hand_main firmware done
+    - name: Run PlatformIO build
+      run: pio run -e hand_firmware
