@@ -414,6 +414,9 @@ static void _hand_ch101_handle_data_ready(ch_group_t* grp_ptr)
       /* TODO: get IQ data */
     }
   }
+  ESP_LOGI(TAG, "%.3f, %.3f, %.3f, %.3f", new_ch101_data.data[0].range,
+           new_ch101_data.data[1].range, new_ch101_data.data[2].range,
+           new_ch101_data.data[3].range);
   /* push to queue */
   xQueueSend(hand_global_ch101_data_queue, &new_ch101_data,
              pdMS_TO_TICKS(HAND_MS_CH101_QUEUE_MAX_DELAY));
@@ -540,7 +543,7 @@ void hand_task_ch101_send_data(void* arg)
 
     if (send_data_index != 0)
     {
-      ESP_LOGI(TAG, "ch101 send data index is %d", send_data_index);
+      ESP_LOGD(TAG, "ch101 send data index is %d", send_data_index);
 
       /* TODO: could be optimized */
       hand_timestamps_arr_arg_t timestamps_arg = {
@@ -605,7 +608,7 @@ void hand_task_ch101_send_data(void* arg)
 
       int64_t end_time = esp_timer_get_time();
       int64_t encode_duration = end_time - start_time;
-      ESP_LOGI(
+      ESP_LOGD(
           TAG,
           "CH101 simple message encoded successfully, size: %zu bytes, time: "
           "%lld us",
@@ -628,7 +631,7 @@ void hand_task_ch101_send_data(void* arg)
 
       end_time = esp_timer_get_time();
       int64_t transmit_duration = end_time - start_time;
-      ESP_LOGI(TAG, "CH101 Data transmitted successfully, time: %lld us",
+      ESP_LOGD(TAG, "CH101 Data transmitted successfully, time: %lld us",
                transmit_duration);
     }
 
