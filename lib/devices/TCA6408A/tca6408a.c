@@ -22,6 +22,12 @@
 
 #include "tca6408a.h"
 
+#ifdef LIB_USE_ESPIDF_PLATFORM
+#pragma message("LIB_USE_ESPIDF_PLATFORM defined")
+#else
+#pragma message("LIB_USE_DUMMY_PLATFORM defined")
+#endif
+
 tca6408a_err_t tca6408a_set_pin_high(const tca6408a_dev_t* dev_ptr, int nth_pin)
 {
   return tca6408a_set_bit_level(dev_ptr, TCA6408A_OUTPUT_REG, nth_pin,

@@ -27,10 +27,8 @@
 
 #ifdef LIB_USE_ESPIDF_PLATFORM
 #include "platform/espidf/tca6408a_espidf.h"
-#pragma message("LIB_USE_ESPIDF_PLATFORM defined")
 #else
 #include "platform/dummy/tca6408a_dummy.h"
-#pragma message("LIB_USE_DUMMY_PLATFORM defined")
 #endif
 
 #ifdef __cplusplus

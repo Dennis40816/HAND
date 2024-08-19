@@ -29,13 +29,10 @@
 
 #ifdef LIB_USE_ESPIDF_PLATFORM
 #include "platform/espidf/bos1901_espidf.h"
-#pragma message("LIB_USE_ESPIDF_PLATFORM defined")
 #elif defined LIB_USE_STM32_PLATFORM
 #include "platform/stm32/bos1901_stm32.h"
-#pragma message("LIB_USE_STM32_PLATFORM defined")
 #else
 #include "platform/dummy/bos1901_dummy.h"
-#pragma message("LIB_USE_DUMMY_PLATFORM defined")
 #endif
 
 #ifdef __cplusplus

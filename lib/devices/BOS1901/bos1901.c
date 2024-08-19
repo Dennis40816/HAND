@@ -22,6 +22,14 @@
 
 #include "bos1901.h"
 
+#ifdef LIB_USE_ESPIDF_PLATFORM
+#pragma message("LIB_USE_ESPIDF_PLATFORM defined")
+#elif defined LIB_USE_STM32_PLATFORM
+#pragma message("LIB_USE_STM32_PLATFORM defined")
+#else
+#pragma message("LIB_USE_DUMMY_PLATFORM defined")
+#endif
+
 static const char *TAG = "bos1901";
 
 /* static function declaration */
@@ -305,8 +313,8 @@ bos1901_err_t bos1901_device_read_reg(bos1901_dev_t *dev,
   BOS_LOGV(TAG, "Detect oe status is: %s",
            (oe) ? "BOS1901_OE_ENABLE" : "BOS1901_OE_DISABLE");
 
-  // length
-  const uint32_t rw_length = 2;  // 2 words
+  // // length
+  // const uint32_t rw_length = 2;  // 2 words
 
   // shift
   const int address_reg_shift = 12;
@@ -327,7 +335,7 @@ bos1901_err_t bos1901_device_read_reg(bos1901_dev_t *dev,
   const int play_mask = 0b111;          // 3 bits
 
   /* format read register data_tx from reg */
-  uint16_t data_tx[2];
+  // uint16_t data_tx[2];
   uint16_t data_rx[2];
 
   /* format cmd */
@@ -338,8 +346,8 @@ bos1901_err_t bos1901_device_read_reg(bos1901_dev_t *dev,
       ((ds & ds_mask) << ds_shift) | ((play_mode & play_mask) << play_shift);
 
   /* assign cmd */
-  data_tx[0] = cmd;
-  data_tx[1] = dummy;
+  // data_tx[0] = cmd;
+  // data_tx[1] = dummy;
 
   BOS_LOGV(TAG, "Send cmd in `bos1901_device_read_reg`: 0x%04X", cmd);
 

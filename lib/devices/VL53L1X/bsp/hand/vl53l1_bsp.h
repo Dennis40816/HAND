@@ -1,12 +1,5 @@
 #pragma once
 
-#pragma message("Using BSP BOARD HAND")
-
-/* test only */
-#ifdef LIB_USE_BSP_HAND
-#pragma message("Good")
-#endif
-
 /* espidf related */
 #include "driver/i2c.h"
 

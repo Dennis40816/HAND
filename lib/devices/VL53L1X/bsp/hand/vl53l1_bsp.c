@@ -3,6 +3,8 @@
 
 #include "tca6408a.h"
 
+#pragma message("Using BSP BOARD HAND")
+
 /**
  * For HAND
  * VL53L1X_1 XSHUT: TCA6408A (0x20) P3
