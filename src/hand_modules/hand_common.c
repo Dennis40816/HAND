@@ -248,6 +248,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
   /* TODO: should we add callback here?  */
 
   /* Configure CH101 group */
+  const uint8_t config_max_retry = 5;
   uint8_t num_connected_sensors = 0;
 
   ESP_LOGI(TAG, "Configuring CH101 sensor(s)...");
@@ -311,7 +312,13 @@ static esp_err_t hand_i2c_bus_and_device_init(
       }
 
       /* Apply sensor configuration */
-      chirp_err = ch_set_config(dev_ptr, &dev_config);
+      for (uint8_t i = 0; i < config_max_retry; ++i)
+      {
+        chirp_err = ch_set_config(dev_ptr, &dev_config);
+        if (!chirp_err) break;
+        ESP_LOGI(TAG, "CH101 {%d} config error on retry time: {%d}", dev_num,
+                 i + 1);
+      }
 
       /* Enable sensor interrupt if using free-running mode
        *   Note that interrupt is automatically enabled if using
@@ -334,13 +341,18 @@ static esp_err_t hand_i2c_bus_and_device_init(
       }
       else
       {
-        ESP_LOGE(TAG, "Device %d: Error during ch_set_config()\n", dev_num);
+        ESP_LOGE(
+            TAG,
+            "Device %d: Error during ch_set_config(), already retry %d times\n",
+            dev_num, config_max_retry);
       }
     }
   }
 
-  ESP_LOGI(TAG, "CH101 active dev num in hex: 0x%02X",
-           hand_global_ch101_active_dev_num);
+  char _buf[16];
+  hand_util_to_bit_str(hand_global_ch101_active_dev_num, _buf, 16);
+
+  ESP_LOGI(TAG, "CH101 active dev num in binary: %s", _buf);
   ESP_LOGI(TAG, "CH101 connected dev num is: %d", num_connected_sensors);
 
   /* TODO: check this is needed or not */
