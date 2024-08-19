@@ -22,5 +22,10 @@
  * SOFTWARE.
  */
 
+#include <stdint.h>
+#include <stddef.h>
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
+
+size_t hand_util_to_bit_str(uint64_t number, char *buffer, size_t buf_size);
