@@ -167,7 +167,8 @@ void hand_task_vl53l1x_collect_data(void* __attribute__((unused)) arg)
 void hand_task_vl53l1x_from_queue_to_ppb(void* __attribute__((unused)) arg)
 {
   hand_vl53l1x_data_element_t new_vl53l1x_data;
-  hand_ppb_vl53l1x_data_t* const ppb_p = &hand_global_vl53l1x_ping_pong_buffer;
+  volatile hand_ppb_vl53l1x_data_t* const ppb_p =
+      &hand_global_vl53l1x_ping_pong_buffer;
 
   /* parse task arg (currently, remain unused))*/
 
@@ -208,7 +209,8 @@ void hand_task_vl53l1x_from_queue_to_ppb(void* __attribute__((unused)) arg)
 
 void hand_task_vl53l1x_send_data(void* arg)
 {
-  hand_ppb_vl53l1x_data_t* const ppb_p = &hand_global_vl53l1x_ping_pong_buffer;
+  volatile hand_ppb_vl53l1x_data_t* const ppb_p =
+      &hand_global_vl53l1x_ping_pong_buffer;
   uint8_t buffer[HAND_SIZE_NANOPB_BUFFER_VL53L1X] = {0};
 
   hand_task_arg_vl53l1x_send_data_t* task_arg_p =
@@ -443,7 +445,8 @@ void hand_task_ch101_collect_data(void* __attribute__((unused)) arg)
 void hand_task_ch101_from_queue_to_ppb(void* __attribute__((unused)) arg)
 {
   hand_chx01_group_data_element_t new_ch101_data;
-  hand_ppb_ch101_data_t* const ppb_p = &hand_global_ch101_ping_pong_buffer;
+  volatile hand_ppb_ch101_data_t* const ppb_p =
+      &hand_global_ch101_ping_pong_buffer;
 
   /* parse task arg (currently, remain unused))*/
 
@@ -490,7 +493,8 @@ void hand_task_ch101_from_queue_to_ppb(void* __attribute__((unused)) arg)
 
 void hand_task_ch101_send_data(void* arg)
 {
-  hand_ppb_ch101_data_t* const ppb_p = &hand_global_ch101_ping_pong_buffer;
+  volatile hand_ppb_ch101_data_t* const ppb_p =
+      &hand_global_ch101_ping_pong_buffer;
   uint8_t buffer[HAND_SIZE_NANOPB_BUFFER_CH101] = {0};
 
   hand_task_arg_ch101_send_data_t* task_arg_p =
