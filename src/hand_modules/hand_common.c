@@ -632,6 +632,26 @@ static esp_err_t hand_gpio_init_vl53l1x()
   return gpio_config(&io_conf);
 }
 
+static esp_err_t hand_gpio_bq25302_init(hand_devices_handle_t* devs_handle_p)
+{
+  ESP_LOGI(TAG, "Initializing BQ25302 EN GPIO");
+
+  /* make TCA_BQ25302_EN HIGH to disable charging by default */
+  tca6408a_dev_t* dev =
+      &(devs_handle_p->tca_dev[HAND_DEV_TCA6408A_OTHER_INDEX]);
+  /* TODO: use HAND_PIN_TCA_BQ25302_EN in the future */
+  tca6408a_set_pin_output_mode(dev, HAND_PIN_TCA_P1);
+  return tca6408a_set_pin_high(dev, HAND_PIN_TCA_P1);
+}
+
+/**
+ * @brief
+ *
+ * @warning Must be called after `hand_i2c_bus_and_device_init()`
+ *
+ * @param devs_handle_p
+ * @return esp_err_t
+ */
 static esp_err_t hand_gpio_init(hand_devices_handle_t* devs_handle_p)
 {
   esp_err_t ret = ESP_OK;
@@ -641,6 +661,8 @@ static esp_err_t hand_gpio_init(hand_devices_handle_t* devs_handle_p)
 
   /* debug pin related */
   ret = hand_gpio_init_debug(devs_handle_p);
+
+  ret = hand_gpio_bq25302_init(devs_handle_p);
 
   return ret;
 }
@@ -749,11 +771,8 @@ esp_err_t hand_init(const char* ssid, const char* password, bool init_dev)
 {
   esp_err_t ret = ESP_OK;
 
-  /* wait for system starts if usb plugged in */
-  if (usb_serial_jtag_is_connected())
-  {
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
+  /* wait for system starts */
+  vTaskDelay(pdMS_TO_TICKS(1000));
 
   ret = hand_wifi_and_terminal_init(ssid, password);
 
