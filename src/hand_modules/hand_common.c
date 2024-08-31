@@ -97,10 +97,14 @@ static esp_err_t hand_i2c_bus_and_device_init(
   ESP_LOGI(TAG, "I2C0 host initialized");
 
   /* init TCA6408A group (both @I2C_0) */
-  devs_handle_p->tca_dev[0].address = HAND_BUS_I2C_ADDR_TCA_OTHER;
-  devs_handle_p->tca_dev[0].i2c_bus = HAND_BUS_I2C_0_PORT_NUM;
-  devs_handle_p->tca_dev[1].address = HAND_BUS_I2C_ADDR_TCA_CH101;
-  devs_handle_p->tca_dev[1].i2c_bus = HAND_BUS_I2C_0_PORT_NUM;
+  devs_handle_p->tca_dev[HAND_DEV_TCA6408A_OTHER_INDEX].address =
+      HAND_BUS_I2C_ADDR_TCA_OTHER;
+  devs_handle_p->tca_dev[HAND_DEV_TCA6408A_OTHER_INDEX].i2c_bus =
+      HAND_BUS_I2C_0_PORT_NUM;
+  devs_handle_p->tca_dev[HAND_DEV_TCA6408A_CH101_INDEX].address =
+      HAND_BUS_I2C_ADDR_TCA_CH101;
+  devs_handle_p->tca_dev[HAND_DEV_TCA6408A_CH101_INDEX].i2c_bus =
+      HAND_BUS_I2C_0_PORT_NUM;
   ESP_LOGI(TAG, "TCA6408 devices initialized");
 
   /* TODO: init BQ27427 (if battery is inserted) */
