@@ -38,7 +38,7 @@ static void vl53l1x_init(VL53L1_DEV dev, bool calibration_en)
   VL53L1_UserRoi_t default_roi = {
       .TopLeftX = 6, .TopLeftY = 9, .BotRightX = 9, .BotRightY = 6};
 
-  ESP_LOGW(TAG, "Init process starts, all return status should be: {%d}",
+  ESP_LOGW(TAG, "VL53L1X init process starting, all return status should be: {%d}",
            VL53L1_ERROR_NONE);
 
   /* init */
@@ -75,7 +75,7 @@ static void vl53l1x_init(VL53L1_DEV dev, bool calibration_en)
   status = VL53L1_SetUserROI(dev, &default_roi);
   ESP_LOGI(TAG, "Status of `VL53L1_SetUserROI` is: {%d}", status);
 
-  ESP_LOGW(TAG, "Init process end");
+  ESP_LOGW(TAG, "VL53L1X init process end");
 }
 
 static esp_err_t hand_i2c_bus_and_device_init(
