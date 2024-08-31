@@ -462,18 +462,20 @@ static void find_sensors(void)
   ioport_set_pin_level(CHIRP_PROG_3, CHIRP_GPIO_LEVEL_LOW);  // PROG_3=L
   ioport_set_pin_level(CHIRP_PROG_4, CHIRP_GPIO_LEVEL_LOW);  // PROG_4=L
 
-  tca6408a_reg_info_t info;
-  tca6408a_read_all(&tca6408a_config, &info);
-  char s[120];
-  tca6408a_reg_info_to_str(&info, s, 120);
-  ESP_LOGI("find_sensors", "\n%s", s);
+  /* debug usage */
+  // tca6408a_reg_info_t info;
+  // tca6408a_read_all(&tca6408a_config, &info);
+  // char s[120];
+  // tca6408a_reg_info_to_str(&info, s, 120);
+  // ESP_LOGI("find_sensors", "\n%s", s);
 
   /* check sensor 1 */
   ioport_set_pin_level(CHIRP_PROG_1, CHIRP_GPIO_LEVEL_HIGH);
 
-  tca6408a_read_all(&tca6408a_config, &info);
-  tca6408a_reg_info_to_str(&info, s, 120);
-  ESP_LOGI("find_sensors", "After set PROG1\n%s", s);
+  /* debug usage */
+  // tca6408a_read_all(&tca6408a_config, &info);
+  // tca6408a_reg_info_to_str(&info, s, 120);
+  // ESP_LOGI("find_sensors", "After set PROG1\n%s", s);
 
   sig_bytes[0] = 0;
   sig_bytes[1] = 0;

@@ -25,6 +25,19 @@
 #include "hand_hw_config.h"
 #include "hand_wifi_config.h"
 
+/* CH101 mode related */
+// clang-format off
+// #define HAND_CH101_DEFAULT_MODE {CH_MODE_TRIGGERED_TX_RX, CH_MODE_TRIGGERED_RX_ONLY, CH_MODE_TRIGGERED_TX_RX, CH_MODE_TRIGGERED_TX_RX}
+
+// 建議使用 FREERUN
+#define HAND_CH101_DEFAULT_MODE {CH_MODE_FREERUN, CH_MODE_FREERUN, CH_MODE_FREERUN, CH_MODE_FREERUN}
+
+// 跟外殼形狀有關
+#define HAND_CH101_FW_INIT {ch101_gpr_open_init, ch101_gpr_open_init, ch101_gpr_open_init, ch101_gpr_open_init}
+// #define HAND_CH101_FW_INIT {ch101_gpr_sr_open_init, ch101_gpr_sr_open_init, ch101_gpr_sr_open_init, ch101_gpr_sr_open_init}
+
+// clang-format on
+
 /* CPU ID related config (driver) */
 
 /**
@@ -57,7 +70,7 @@
 // NanoPB stream buffer size
 
 #define HAND_SIZE_NANOPB_BUFFER_VL53L1X (2048)
-#define HAND_SIZE_NANOPB_BUFFER_CH101   (4096)
+#define HAND_SIZE_NANOPB_BUFFER_CH101   (4192)
 
 // Queue size (size of the queue used for buffering real-time data before
 // storing it in the ping-pong buffer.)

@@ -168,6 +168,8 @@ static esp_err_t hand_i2c_bus_and_device_init(
 
   uint8_t chirp_err = 0;
 
+  ch_fw_init_func_t ch101_init_fw[HAND_DEV_MAX_NUM_CH101] = HAND_CH101_FW_INIT;
+
   for (uint8_t dev_num = 0; dev_num < num_ports; ++dev_num)
   {
     ch_dev_t* dev_ptr = ch101_devs_p + dev_num;  // init struct in array
@@ -182,7 +184,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
      *   when ch_init() is called for each.
      */
     chirp_err |=
-        ch_init(dev_ptr, ch101_group_p, dev_num, CHIRP_SENSOR_FW_INIT_FUNC);
+        ch_init(dev_ptr, ch101_group_p, dev_num, ch101_init_fw[dev_num]);
   }
 
   if (chirp_err == 0)
@@ -212,7 +214,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
       /* disable the device if RTC CAL result seems wrong */
       uint16_t _rtc_cal_result = ch_get_rtc_cal_result(dev_ptr);
       const uint16_t rtc_cal_lowerbond = 2500;
-      const uint16_t rtc_cal_upperbond = 3000;
+      const uint16_t rtc_cal_upperbond = 3100;
       // a raw range
       bool _rtc_cal_ok = (_rtc_cal_result >= rtc_cal_lowerbond &&
                           _rtc_cal_result <= rtc_cal_upperbond);
@@ -254,6 +256,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
   /* Configure CH101 group */
   const uint8_t config_max_retry = 5;
   uint8_t num_connected_sensors = 0;
+  ch_mode_t ch101_modes[HAND_DEV_MAX_NUM_CH101] = HAND_CH101_DEFAULT_MODE;
 
   ESP_LOGI(TAG, "Configuring CH101 sensor(s)...");
   for (uint8_t dev_num = 0; dev_num < num_ports; dev_num++)
@@ -273,14 +276,7 @@ static esp_err_t hand_i2c_bus_and_device_init(
       hand_global_ch101_active_dev_num |=
           (1 << dev_num);  // add to active device bit mask
 
-      if (num_connected_sensors == 1)
-      {  // if this is the first sensor
-        dev_config.mode = CHIRP_FIRST_SENSOR_MODE;
-      }
-      else
-      {
-        dev_config.mode = CHIRP_OTHER_SENSOR_MODE;
-      }
+      dev_config.mode = ch101_modes[dev_num];
 
       if (dev_config.mode != CH_MODE_FREERUN)
       {                                         // unless free-running

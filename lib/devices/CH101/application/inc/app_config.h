@@ -57,22 +57,24 @@
  *   less.
  */
 
+/*WARNING: move to hand_config.h */
+
 /* CH101 GPR - general purpose rangefinding, standard range */
 // #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_init
 
 /* CH101 GPR NARROW - general purpose rangefinding, narrow FoV */
-// #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_narrow_init
+#define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_narrow_init
 
 /* CH101 GPR SR - general purpose rangefinding, short range */
 // #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_sr_init
 
 /* CH101 GPR SR NARROW - general purpose rangefinding, short range, narrow FoV
  */
-//  #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_sr_narrow_init
+// #define CHIRP_SENSOR_FW_INIT_FUNC ch101_gpr_sr_narrow_init
 
 /* CH101 GPR OPEN - general purpose rangefinding, open FoV
  */
- #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_open_init
+//  #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch101_gpr_open_init
 
 /* CH201 GPRMT - general purpose rangefinding / multi threshold */
 // #define	 CHIRP_SENSOR_FW_INIT_FUNC	ch201_gprmt_init
@@ -93,8 +95,11 @@
  * 	 CHIRP_FIRST_SENSOR_MODE to CH_MODE_TRIGGERED_TX_RX and set
  * 	 CHIRP_OTHER_SENSOR_MODE to CH_MODE_TRIGGERED_RX_ONLY.
  */
-#define CHIRP_FIRST_SENSOR_MODE CH_MODE_TRIGGERED_TX_RX
-#define CHIRP_OTHER_SENSOR_MODE CH_MODE_TRIGGERED_TX_RX
+/* 觀察得知，當所有都設定成 CH_MODE_TRIGGERED_TX_RX 似乎會干擾，一部分設定成
+ * FREERUN 會好一點 */
+/* WARNING: 換成用 hand_config.h 配置模式 */
+#define CHIRP_FIRST_SENSOR_MODE CH_MODE_FREERUN
+#define CHIRP_OTHER_SENSOR_MODE CH_MODE_TRIGGERED_RX_ONLY
 
 /* Maximum detection range for the sensor
  * This value will determine how long the sensor "listens" for an ultrasound
@@ -118,7 +123,7 @@
  * This value specifieds if receive (rx) sensor pre-triggering will be used.
  * This setting only applies if more than one sensor is used, and one or more
  * sensor is operating in CH_MODE_TRIGGERED_RX_ONLY.
- *
+
  * Receive pre-triggering improves performance in pitch-catch operation at
  * short distances, by triggering the receive-only sensor(s) slightly before
  * the transmitting sensor.  However, this setting will reduce maximum range of

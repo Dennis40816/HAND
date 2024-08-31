@@ -150,4 +150,10 @@ void hand_cb_ch101_periodic_timer(void)
     /* Note: resume interrupt */
     ch_group_trigger(&(hand_global_devs_handle.ch101_group));
   }
+  else
+  {
+    xEventGroupSetBitsFromISR(hand_global_ch101_event_group,
+                              HAND_EG_CH101_ALL_ACTIVE_DEV_DATA_READY_BIT,
+                              NULL);
+  }
 }
