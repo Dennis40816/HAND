@@ -15,6 +15,9 @@ This repo contains the firmware code for the HAND main board (esp32-s3-mini). Th
 
   - [LLVM (clang-format)](https://llvm.org/builds/)
 
+## Problem Shooting
+- [CMake Error: grabRef.cmake no file head-ref](https://community.platformio.org/t/cmake-error-grabref-cmake-no-file-head-ref/28119)
+
 ## Nanopb & ProtoBuf
 
 - For nanopb and c output, do:
