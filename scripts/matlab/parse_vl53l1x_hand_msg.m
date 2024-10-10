@@ -1,6 +1,6 @@
 %% for demo
 % jsonData = fileread('../../data/vl53l1x_proto_test/vl53l1x_proto_test.json');
-jsonData = fileread('../../logs/hand_msg_00.json');
+jsonData = fileread('../../logs/hand_msg_04.json');
 
 msgSet = jsondecode(jsonData);
 

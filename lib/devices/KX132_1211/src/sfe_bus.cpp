@@ -45,7 +45,7 @@
 // and Serial Peripheral Interface (SPI).
 
 #include "sfe_bus.h"
-#include <Arduino.h>
+
 
 namespace sfe_KX13X
 {

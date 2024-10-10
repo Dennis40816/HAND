@@ -471,6 +471,8 @@ bos1901_err_t bos1901_device_output_enable(bos1901_dev_t *dev,
   /* assign oe bit */
   config_value |= (new_status << oe_shift);
 
+  BOS_LOGI(TAG, "Set bos1901 dev {%s} output {%d}", dev_name, config_value);
+
   ret = bos1901_device_write_reg(dev, BOS1901_REG_CONFIG, config_value);
 
   if (ret != BOS1901_OK)

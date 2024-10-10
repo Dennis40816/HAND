@@ -7,6 +7,7 @@
 #include "math.h"
 
 static SemaphoreHandle_t xMutex = NULL;
+static bool write_fifo_flag = false;
 
 /**
  * @brief See details in src/history/main.motor_output_single_value_test
@@ -40,7 +41,7 @@ bos1901_dev_t *bos1901_device_1;
 bos1901_dev_t *bos1901_device_2;
 bos1901_dev_t *bos1901_device_3;
 
-#define BOS1901_TEST_DEVICE bos1901_device_0
+#define BOS1901_TEST_DEVICE bos1901_device_2
 
 #define SINE_FREQ      (200)
 #define WAVEFORM_SIZE  (8000 / SINE_FREQ)
@@ -120,7 +121,7 @@ static void fill_fifo_to_bos1901_0_task(void *para)
   uint16_t waveform_size;
 
   // WARNING: must not exceed 60 V
-  calculate_waveform(waveform, &waveform_size, 60.0f, 10.0f, SINE_FREQ, 1);
+  calculate_waveform(waveform, &waveform_size, 60.0f, 20.0f, SINE_FREQ, 1);
 
   ESP_LOGI(TAG, "waveform_size is: %d", waveform_size);
 
@@ -131,8 +132,13 @@ static void fill_fifo_to_bos1901_0_task(void *para)
   {
     if (xMutex != NULL)
     {
+      if (!write_fifo_flag)
+      {
+        /* do not write FIFO, just wait for next time */
+        vTaskDelay(pdMS_TO_TICKS(1));
+      }
       // 嘗試獲取互斥鎖
-      if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
+      else if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
       {
         // 讀取 ic_status 寄存器
         bos1901_device_read_reg(BOS1901_TEST_DEVICE, BOS1901_REG_IC_STATUS,
@@ -443,24 +449,53 @@ static void enable_and_disable_bos1901(TaskHandle_t handle)
     if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
     {
       bos1901_device_output_enable(BOS1901_TEST_DEVICE, BOS1901_OE_ENABLE);
-      ESP_LOGW(TAG,
-               "Output enabled! The output value should be: 25 Volt. Start "
-               "your measurement. The enable time keep for 10 seconds");
-      gpio_set_level(PIN_LED_RED, 1);
+      // ESP_LOGW(TAG,
+      //          "Output enabled! The output value should be: 25 Volt. Start "
+      //          "your measurement. The enable time keep for 10 seconds");
+      // gpio_set_level(PIN_LED_RED, 1);
       xSemaphoreGive(xMutex);
     }
-
-    vTaskDelay(pdMS_TO_TICKS(10000));
-
-    if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
-    {
-      bos1901_device_output_enable(BOS1901_TEST_DEVICE, BOS1901_OE_DISABLE);
-      vTaskDelete(handle);
-      xSemaphoreGive(xMutex);
-    }
-    gpio_set_level(PIN_LED_RED, 0);
-    ESP_LOGW(TAG, "Output disabled!");
   }
+
+  for (int i = 0; i < 3; ++i)
+  {
+    write_fifo_flag = 1;
+    ESP_LOGI(TAG, "Enable BOS1901 output");
+    gpio_set_level(PIN_LED_RED, 1);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    write_fifo_flag = 0;
+    ESP_LOGI(TAG, "Disable BOS1901 output");
+    gpio_set_level(PIN_LED_RED, 0);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+  }
+
+  /* FIXME: some bugs found here */
+  // if (xMutex != NULL)
+  // {
+  //   // 嘗試獲取互斥鎖
+  //   if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
+  //   {
+  //     bos1901_device_output_enable(BOS1901_TEST_DEVICE, BOS1901_OE_ENABLE);
+  //     ESP_LOGW(TAG,
+  //              "Output enabled! The output value should be: 25 Volt. Start "
+  //              "your measurement. The enable time keep for 10 seconds");
+  //     gpio_set_level(PIN_LED_RED, 1);
+  //     xSemaphoreGive(xMutex);
+  //   }
+
+  //   vTaskDelay(pdMS_TO_TICKS(5000));
+
+  //   if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
+  //   {
+  //     bos1901_device_output_enable(BOS1901_TEST_DEVICE, BOS1901_OE_DISABLE);
+  //     // vTaskDelete(handle);
+  //     xSemaphoreGive(xMutex);
+  //   }
+  //   gpio_set_level(PIN_LED_RED, 0);
+  //   ESP_LOGW(TAG, "Output disabled!");
+  //   vTaskDelay(pdMS_TO_TICKS(5000));
+  // }
 }
 
 void app_main()
