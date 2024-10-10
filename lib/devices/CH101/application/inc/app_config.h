@@ -108,7 +108,7 @@
  * here is greater than the maximum possible range, the maximum possible range
  * will be used.
  */
-#define CHIRP_SENSOR_MAX_RANGE_MM (500) /* maximum range, in mm */
+#define CHIRP_SENSOR_MAX_RANGE_MM (1200) /* maximum range, in mm */
 
 /* Static target rejection range
  * This value specifies if static target rejection (STR) will be used.  If
