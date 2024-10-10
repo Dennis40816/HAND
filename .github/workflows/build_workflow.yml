@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
 
@@ -25,11 +25,13 @@ jobs:
         pip install platformio
         pip install --upgrade setuptools
 
-    - name: Run PlatformIO build
-      run: pio run -e esp32-s3-devkitm-1
-
-    - name: Run tests
-      run: pio test -e esp32-s3-devkitm-1
+    - name: Run PlatformIO test build
+      run:
+        pio test -e hand_test -vv -f "*" --without-uploading --without-testing
 
     - name: Static code analysis
-      run: pio check -e esp32-s3-devkitm-1
+      run: pio check -e hand_firmware
+    
+    # enable this after hand_main firmware done
+    - name: Run PlatformIO build
+      run: pio run -e hand_firmware

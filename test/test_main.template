@@ -1,0 +1,60 @@
+#include <unity.h>
+#include <string.h>
+#include <esp_log.h>
+
+static const char *LOG_TAG = "test_hello_world";
+void setUp() {}
+
+void tearDown() {}
+
+void test_case_a()
+{
+  // clang-format off
+/**
+ * 
+ * TEST_ASSERT_TRUE(expression): Asserts that the expression is true.
+ * TEST_ASSERT_FALSE(expression): Asserts that the expression is false.
+ * TEST_ASSERT(expression): Simple true assertion, equivalent to TEST_ASSERT_TRUE.
+ * TEST_ASSERT_NULL(pointer): Asserts that the pointer is NULL.
+ * TEST_ASSERT_NOT_NULL(pointer): Asserts that the pointer is not NULL.
+ * 
+ * **Numerical Assertions**
+ * TEST_ASSERT_EQUAL_INT(expected, actual): Asserts that two int values are equal.
+ * TEST_ASSERT_EQUAL_UINT(expected, actual): Asserts that two unsigned int values are equal.
+ * TEST_ASSERT_EQUAL_HEX(expected, actual): Asserts that two hexadecimal values are equal.
+ * TEST_ASSERT_EQUAL_FLOAT(expected, actual): Asserts that two float values are equal.
+ * TEST_ASSERT_EQUAL_DOUBLE(expected, actual): Asserts that two double values are equal.
+ * TEST_ASSERT_GREATER_THAN(expected, actual): Asserts that the actual value is greater than the expected value.
+ * TEST_ASSERT_LESS_THAN(expected, actual): Asserts that the actual value is less than the expected value.
+ * 
+ * **String Assertions**
+ * TEST_ASSERT_EQUAL_STRING(expected, actual): Asserts that two strings are equal.
+ * TEST_ASSERT_EQUAL_STRING_LEN(expected, actual, length): Asserts that two strings are equal up to a specified length.
+ * TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, actual, message): Asserts that two strings are equal and provides a custom message.
+ * 
+ * **Array Assertions**
+ * TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, num_elements): Asserts that two arrays of int values are equal.
+ * TEST_ASSERT_EQUAL_FLOAT_ARRAY(expected, actual, num_elements): Asserts that two arrays of float values are equal.
+ * TEST_ASSERT_EQUAL_MEMORY(expected, actual, length): Asserts that two memory regions are equal.
+ * 
+ * **Bitwise Assertions**
+ * TEST_ASSERT_BITS(mask, expected, actual): Asserts that the result of masking the bits is equal.
+ * TEST_ASSERT_BITS_HIGH(mask, actual): Asserts that the masked bits are all high.
+ * TEST_ASSERT_BITS_LOW(mask, actual): Asserts that the masked bits are all low.
+ * 
+ * **Other Assertions**
+ * TEST_IGNORE(): Ignores the current test.
+ * TEST_IGNORE_MESSAGE(message): Ignores the current test and provides a custom message.
+ * TEST_FAIL(): Fails the current test.
+ * TEST_FAIL_MESSAGE(message): Fails the current test and provides a custom message.
+ *
+ */
+  // clang-format on
+}
+
+void app_main()
+{
+  UNITY_BEGIN();
+  RUN_TEST(test_case_a);
+  UNITY_END();
+}

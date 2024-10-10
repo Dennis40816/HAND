@@ -1,0 +1,164 @@
+#include <unity.h>
+#include "driver/spi_master.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+/**
+ * @pin config
+ * SPI2:
+ *   SDI (MOSI): IO 13
+ *   SDO (MISO): IO 11
+ *   SCLK : IO 12
+ *   CS1: IO 6
+ *
+ * SPI3:
+ *   SDI (MOSI): IO 42
+ *   SDO (MISO): IO 40
+ *   SCLK : IO 41
+ *   CS2: IO 39
+ *   CS3: IO 37
+ *   CS4: IO 35
+ */
+
+#define SPI_CLOCK_SPEED_HZ 5000000  // 5 MHz
+
+#define KX132_DUMMY_BYTE   0x00
+#define KX132_SPI_READ     0x80
+#define KX132_REG_WHO_AM_I 0x13
+
+// SPI2 Pins
+#define SPI2_MOSI_PIN GPIO_NUM_13
+#define SPI2_MISO_PIN GPIO_NUM_11
+#define SPI2_SCLK_PIN GPIO_NUM_12
+#define SPI2_CS1_PIN  GPIO_NUM_6
+
+// SPI3 Pins
+#define SPI3_MOSI_PIN GPIO_NUM_42
+#define SPI3_MISO_PIN GPIO_NUM_40
+#define SPI3_SCLK_PIN GPIO_NUM_41
+#define SPI3_CS2_PIN  GPIO_NUM_39
+#define SPI3_CS3_PIN  GPIO_NUM_37
+#define SPI3_CS4_PIN  GPIO_NUM_35
+
+static const char* TAG = "HAND_KX132_ID_TEST";
+
+void init_spi_bus(spi_host_device_t host, int mosi_pin, int miso_pin,
+                  int sclk_pin)
+{
+  spi_bus_config_t buscfg = {.mosi_io_num = mosi_pin,
+                             .miso_io_num = miso_pin,
+                             .sclk_io_num = sclk_pin,
+                             .quadwp_io_num = -1,
+                             .quadhd_io_num = -1,
+                             .max_transfer_sz = 4096};
+
+  ESP_ERROR_CHECK(spi_bus_initialize(host, &buscfg, SPI_DMA_CH_AUTO));
+  ESP_LOGI(TAG, "SPI bus initialized for host %d", host);
+}
+
+/* Disable all BOS1901 CS pins */
+void disable_other_devices()
+{
+  gpio_config_t io_conf = {
+      .intr_type = GPIO_INTR_DISABLE,
+      .mode = GPIO_MODE_OUTPUT,
+      .pin_bit_mask = (1ULL << 7) | (1ULL << 8) | (1ULL << 9) | (1ULL << 10),
+      .pull_down_en = GPIO_PULLDOWN_DISABLE,
+      .pull_up_en = GPIO_PULLUP_DISABLE};
+
+  gpio_config(&io_conf);
+
+  // Set pins 7, 8, 9, 10 to high level
+  gpio_set_level(7, 1);
+  gpio_set_level(8, 1);
+  gpio_set_level(9, 1);
+  gpio_set_level(10, 1);
+
+  ESP_LOGI(TAG, "Set GPIO 7, 8, 9, 10 to high level");
+}
+
+void init_spi_device(spi_host_device_t host, int cs_pin,
+                     spi_device_handle_t* handle)
+{
+  spi_device_interface_config_t devcfg = {
+      .clock_speed_hz = SPI_CLOCK_SPEED_HZ,
+      .mode = 0,  // SPI mode 0
+      .spics_io_num = cs_pin,
+      .queue_size = 7,
+  };
+
+  ESP_ERROR_CHECK(spi_bus_add_device(host, &devcfg, handle));
+  ESP_LOGI(TAG, "SPI device added to host %d with CS pin %d", host, cs_pin);
+}
+
+esp_err_t spi_read_word(spi_device_handle_t handle, uint8_t reg, uint8_t* data)
+{
+  spi_transaction_t t = {0};
+  uint8_t cmd[2] = {(reg | KX132_SPI_READ), KX132_DUMMY_BYTE};
+  uint8_t rx_buf[2];
+
+  t.length = 16;
+  t.tx_buffer = cmd;
+  t.rx_buffer = rx_buf;
+
+  esp_err_t ret = spi_device_transmit(handle, &t);
+
+  ESP_LOGI(TAG, "Status: {%d}. Read 0x%02X from register 0x%02X", ret,
+           rx_buf[1], reg);
+  *data = rx_buf[1];
+  return ret;
+}
+
+void setUp(void)
+{
+  disable_other_devices();
+
+  // Initialize SPI2 bus and device
+  init_spi_bus(SPI2_HOST, SPI2_MOSI_PIN, SPI2_MISO_PIN, SPI2_SCLK_PIN);
+
+  // Initialize SPI3 bus
+  init_spi_bus(SPI3_HOST, SPI3_MOSI_PIN, SPI3_MISO_PIN, SPI3_SCLK_PIN);
+
+  ESP_LOGI(TAG, "SPI initialization complete");
+}
+
+void tearDown(void)
+{
+  // Add any necessary cleanup here
+}
+
+void test_kx132_id(void)
+{
+  spi_device_handle_t kx132_1, kx132_2, kx132_3, kx132_4;
+  uint8_t ID;
+
+  init_spi_device(SPI2_HOST, SPI2_CS1_PIN, &kx132_1);
+  init_spi_device(SPI3_HOST, SPI3_CS2_PIN, &kx132_2);
+  init_spi_device(SPI3_HOST, SPI3_CS3_PIN, &kx132_3);
+  init_spi_device(SPI3_HOST, SPI3_CS4_PIN, &kx132_4);
+
+  ESP_LOGI(TAG, "Try to read KX132 ID");
+
+  TEST_ASSERT_EQUAL(ESP_OK, spi_read_word(kx132_1, KX132_REG_WHO_AM_I, &ID));
+  TEST_ASSERT_EQUAL_HEX8(0x3D, ID);
+
+  TEST_ASSERT_EQUAL(ESP_OK, spi_read_word(kx132_2, KX132_REG_WHO_AM_I, &ID));
+  TEST_ASSERT_EQUAL_HEX8(0x3D, ID);
+
+  TEST_ASSERT_EQUAL(ESP_OK, spi_read_word(kx132_3, KX132_REG_WHO_AM_I, &ID));
+  TEST_ASSERT_EQUAL_HEX8(0x3D, ID);
+
+  TEST_ASSERT_EQUAL(ESP_OK, spi_read_word(kx132_4, KX132_REG_WHO_AM_I, &ID));
+  TEST_ASSERT_EQUAL_HEX8(0x3D, ID);
+}
+
+void app_main(void)
+{
+  vTaskDelay(pdMS_TO_TICKS(2000));
+
+  UNITY_BEGIN();
+  RUN_TEST(test_kx132_id);
+  UNITY_END();
+}

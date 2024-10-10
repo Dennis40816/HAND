@@ -1,0 +1,96 @@
+@startuml
+' 定義各個結構
+
+class bos1901_dev_config_t {
+  // Platform-independent device configuration fields
+}
+
+class bos1901_spi_interface_t {
+  const char *name
+  const char *description
+  void (*init_device)(bos1901_spi_dev_config_t *config)
+  void (*deinit_device)(bos1901_spi_dev_config_t *config)
+  bos1901_err_t (*write)(bos1901_spi_dev_config_t *config, uint16_t *data, uint32_t length)
+  bos1901_err_t (*read)(bos1901_spi_dev_config_t *config, uint16_t *data, uint32_t length)
+  uint16_t (*read_write_word)(bos1901_spi_dev_config_t *config, uint16_t data)
+  bos1901_err_t (*read_write)(bos1901_spi_dev_config_t *config, uint16_t *data_tx, uint16_t *data_rx, uint32_t length)
+}
+
+class bos1901_spi_dev_t {
+  bos1901_spi_interface_t *spi_interface_ptr
+  bos1901_spi_dev_config_t *device_config
+}
+
+class bos1901_dev_t {
+  const char *dev_name = NULL
+  bos1901_dev_config_t *dev_config
+  bos1901_spi_dev_t *spi_dev
+}
+
+class bos1901_espidf_spi_dev_config_t {
+  spi_host_device_t target_bus
+  spi_device_handle_t* handle
+  spi_device_interface_config_t dev_config
+}
+
+class bos1901_spi_dev_config_t {
+  // alias to bos1901_espidf_spi_dev_config_t
+}
+
+package "platform/espidf" {
+class spi_host_device_t {
+    SPI1_HOST
+    SPI2_HOST
+    #if SOC_SPI_PERIPH_NUM > 2
+    SPI3_HOST
+    #endif
+    SPI_HOST_MAX
+}
+
+class spi_device_handle_t {
+    // Handle for a device on a SPI bus
+}
+
+class spi_device_interface_config_t {
+    uint8_t command_bits
+    uint8_t address_bits
+    uint8_t dummy_bits
+    uint8_t mode
+    spi_clock_source_t clock_source
+    uint16_t duty_cycle_pos
+    uint16_t cs_ena_pretrans
+    uint8_t cs_ena_posttrans
+    int clock_speed_hz
+    int input_delay_ns
+    int spics_io_num
+    uint32_t flags
+    int queue_size
+    transaction_cb_t pre_cb
+    transaction_cb_t post_cb
+}
+}
+' 定義枚舉類型
+enum bos1901_err_t {
+  BOS1901_OK
+  BOS1901_INVALID_ARG
+  BOS1901_ERR_BUS
+  BOS1901_BUSY
+  BOS1901_TIMEOUT
+  BOS1901_UNKNOWN
+}
+
+
+' 關聯 bos1901_err_t 與函數
+bos1901_spi_interface_t --> bos1901_err_t : 使用
+
+' 定義關係
+bos1901_espidf_spi_dev_config_t --> spi_host_device_t : 使用
+bos1901_espidf_spi_dev_config_t --> spi_device_handle_t : 使用
+bos1901_espidf_spi_dev_config_t --> spi_device_interface_config_t : 使用
+bos1901_spi_dev_config_t --|> bos1901_espidf_spi_dev_config_t : alias
+bos1901_spi_dev_t --> bos1901_spi_interface_t : spi_interface_ptr
+bos1901_spi_dev_t --> bos1901_spi_dev_config_t : device_config
+bos1901_dev_t --> bos1901_dev_config_t : dev_config
+bos1901_dev_t --> bos1901_spi_dev_t : spi_dev
+
+@enduml

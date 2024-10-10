@@ -1,0 +1,6 @@
+# Structure of CH-101
+
+- This lib is modified from [TDK SmartSonic HelloChirp](https://invensense.tdk.com/developers/wp-content/uploads/sites/2/2021/08/SmartSonic_HelloChirp_Example_v1_31_0.zip) by Dennis Liu.
+
+# Chirp SmartSonic Platform
+![smartsonic_platform_board](./doc/pic/smartsonic_platform_board.png)

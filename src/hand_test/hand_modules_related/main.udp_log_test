@@ -1,0 +1,279 @@
+#include <stdio.h>
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_system.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+#include "lwip/opt.h"
+#include "fcntl.h"
+
+#include "driver/usb_serial_jtag.h"
+
+#define WIFI_SSID     "CHT061975"
+#define WIFI_PASS     "24577079"
+// #define WIFI_SSID     "602lab"
+// #define WIFI_PASS     "602mems206"
+#define MAX_RETRY     5
+#define UDP_PORT      12345
+// #define UDP_SERVER_IP "192.168.0.170"
+#define UDP_SERVER_IP "192.168.1.17"
+
+static EventGroupHandle_t s_wifi_event_group;
+static const char* TAG = "wifi_station";
+static int s_retry_num = 0;
+
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT      BIT1
+
+static int udp_sock;
+static struct sockaddr_in _dest_addr;
+
+static SemaphoreHandle_t log_set_flag = NULL;
+
+static void udp_receive_task(void* pvParameters)
+{
+    char addr_str[128];
+    int addr_family = AF_INET;
+    int ip_protocol = IPPROTO_IP;
+
+    _dest_addr.sin_addr.s_addr = inet_addr(UDP_SERVER_IP);
+    _dest_addr.sin_family = AF_INET;
+    _dest_addr.sin_port = htons(UDP_PORT);
+    inet_ntoa_r(_dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
+
+    udp_sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+    if (udp_sock < 0)
+    {
+        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    // Bind the socket to the local port
+    struct sockaddr_in local_addr;
+    local_addr.sin_family = AF_INET;
+    local_addr.sin_addr.s_addr = INADDR_ANY;
+    local_addr.sin_port = htons(UDP_PORT);
+    if (bind(udp_sock, (struct sockaddr*)&local_addr, sizeof(local_addr)) < 0)
+    {
+        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+        close(udp_sock);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    // Set the socket to non-blocking mode
+    fcntl(udp_sock, F_SETFL, O_NONBLOCK);
+
+    // Send the current IP address
+    esp_netif_ip_info_t ip_info;
+    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+    char ip[16];
+    sprintf(ip, IPSTR, IP2STR(&ip_info.ip));
+
+    // Transmit initial log
+    if (xSemaphoreTake(log_set_flag, portMAX_DELAY) == pdTRUE)
+    {
+        ESP_LOGI(TAG, "Socket created, sending to %s:%d", UDP_SERVER_IP, UDP_PORT);
+        ESP_LOGI("HAND-IP-INFO", "IP: %s, Port: %d", ip, UDP_PORT);
+        xSemaphoreGive(log_set_flag);
+    }
+
+    while (1)
+    {
+        fd_set read_fds;
+        struct timeval timeout;
+        int rc;
+
+        // Initialize file descriptor set
+        FD_ZERO(&read_fds);
+        FD_SET(udp_sock, &read_fds);
+
+        // Set timeout
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+
+        // Use select to wait for data
+        rc = select(udp_sock + 1, &read_fds, NULL, NULL, &timeout);
+
+        if (rc < 0)
+        {
+            ESP_LOGE(TAG, "Select failed: errno %d", errno);
+            break;
+        }
+        else if (rc == 0)
+        {
+            ESP_LOGI(TAG, "Select timeout, no data received");
+        }
+        else
+        {
+            if (FD_ISSET(udp_sock, &read_fds))
+            {
+                // Receive UDP message
+                struct sockaddr_in source_addr;
+                socklen_t socklen = sizeof(source_addr);
+                char rx_buffer[128];
+                int len = recvfrom(udp_sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr*)&source_addr, &socklen);
+                if (len > 0)
+                {
+                    rx_buffer[len] = 0;  // Null-terminate whatever we received
+                    ESP_LOGI(TAG, "Got: %s", rx_buffer);
+                }
+            }
+        }
+
+        // Add delay to avoid excessive CPU usage
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    // Clean up resources
+    close(udp_sock);
+    vTaskDelete(NULL);
+}
+
+static void log_task(void* pvParameters)
+{
+    if (xSemaphoreTake(log_set_flag, portMAX_DELAY) == pdTRUE)
+    {
+        xSemaphoreGive(log_set_flag);
+    }
+    while (1)
+    {
+        // Delay 10 seconds
+        vTaskDelay(pdMS_TO_TICKS(10000));
+        // Log output
+        ESP_LOGV(TAG, "Logging test: Verbose level log message");
+        ESP_LOGD(TAG, "Logging test: Debug level log message");
+        ESP_LOGI(TAG, "Logging test: Info level log message");
+        ESP_LOGW(TAG, "Logging test: Warning level log message");
+        ESP_LOGE(TAG, "Logging test: Error level log message");
+    }
+}
+
+static int custom_log_handler_vprintf(const char* format, va_list args)
+{
+    char log_buffer[512];
+    int len = vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+    if (len > 0)
+    {
+        sendto(udp_sock, log_buffer, len, 0, (struct sockaddr*)&_dest_addr, sizeof(_dest_addr));
+    }
+
+    // See: https://github.com/espressif/esp-idf/issues/9366
+    if (usb_serial_jtag_is_connected())
+    {
+        return vprintf(format, args);
+    }
+    else
+    {
+        return len;
+    }
+}
+
+static void event_handler(void* arg, esp_event_base_t event_base,
+                          int32_t event_id, void* event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
+    {
+        esp_wifi_connect();
+    }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
+    {
+        if (s_retry_num < MAX_RETRY)
+        {
+            esp_wifi_connect();
+            s_retry_num++;
+            ESP_LOGI(TAG, "retry to connect to the AP");
+        }
+        else
+        {
+            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+        }
+        ESP_LOGI(TAG, "connect to the AP fail");
+    }
+    else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
+    {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+        ESP_LOGI(TAG, "got ip:%s", ip4addr_ntoa(&event->ip_info.ip));
+        s_retry_num = 0;
+        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+        xTaskCreate(udp_receive_task, "udp_receive_task", 4096, NULL, 5, NULL);
+        xTaskCreate(log_task, "log_task", 4096, NULL, 5, NULL);
+    }
+}
+
+void wifi_init_sta(void)
+{
+    s_wifi_event_group = xEventGroupCreate();
+
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    esp_event_handler_instance_t instance_any_id;
+    esp_event_handler_instance_t instance_got_ip;
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL, &instance_any_id));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL, &instance_got_ip));
+
+    wifi_config_t wifi_config = {
+        .sta =
+        {
+            .ssid = WIFI_SSID,
+            .password = WIFI_PASS,
+        },
+    };
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "wifi_init_sta finished.");
+
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+                                           WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+                                           pdFALSE, pdFALSE, portMAX_DELAY);
+
+    if (bits & WIFI_CONNECTED_BIT)
+    {
+        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s", WIFI_SSID, WIFI_PASS);
+    }
+    else if (bits & WIFI_FAIL_BIT)
+    {
+        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", WIFI_SSID, WIFI_PASS);
+    }
+    else
+    {
+        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+    }
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_unregister(
+        IP_EVENT, IP_EVENT_STA_GOT_IP, instance_got_ip));
+    ESP_ERROR_CHECK(esp_event_handler_instance_unregister(
+        WIFI_EVENT, ESP_EVENT_ANY_ID, instance_any_id));
+    vEventGroupDelete(s_wifi_event_group);
+}
+
+void app_main(void)
+{
+    log_set_flag = xSemaphoreCreateBinary();
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+
+    ESP_ERROR_CHECK(nvs_flash_init());
+    wifi_init_sta();
+
+    esp_log_set_vprintf(custom_log_handler_vprintf);
+
+    xSemaphoreGive(log_set_flag);
+    ESP_LOGI(TAG, "ESP32 logging over UDP initialized.");
+}

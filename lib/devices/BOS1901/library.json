@@ -1,0 +1,24 @@
+{
+    "name": "BOS1901",
+    "version": "1.0.1",
+    "description": "BOS1901 driver",
+    "keywords": [
+      "BOS1901",
+      "piezo",
+      "driver"
+    ],
+    "license": "MIT",
+    "authors": [
+      {
+        "name": "Dennis Liu",
+        "email": "dennis48161025@gmail.com"
+      }
+    ],
+    "frameworks": "espidf",
+    "platforms": [
+      "espressif32"
+    ],
+    "build": {
+      "extraScript": "extra_script.py"
+    }
+  }
