@@ -30,16 +30,16 @@ In terms of its purpose, the core objective of the ETA is to enhance the user's 
 
 |              | Front                                     | Back                                                     |
 |:------------:| ----------------------------------------- | -------------------------------------------------------- |
-|  Main Board  | ![main_board](pictures/hand_main.png)     | ![main_board back side](pictures/hand_main_back.png)     |
-| Sensor Board | ![sensor_board](pictures/hand_sensor.png) | ![sensor_board back side](pictures/hand_sensor_back.png) |
+|  Main Board  | ![main_board](pictures/hand_main-min.png)     | ![main_board back side](pictures/hand_main_back-min.png)     |
+| Sensor Board | ![sensor_board](pictures/hand_sensor-min.png) | ![sensor_board back side](pictures/hand_sensor_back-min.png) |
 
 The combination of the main board and the sensor board is shown below:
 
-![combination](pictures/hand_combination.png)
+![combination](pictures/hand_combination-min.png)
 
 It is worn on the user's hand back as shown below:
 
-![wearable](pictures/hand_wearable.png)
+![wearable](pictures/hand_wearable-min.png)
 
 ## Directory Description
 
@@ -50,7 +50,7 @@ It is worn on the user's hand back as shown below:
   - **part_test**  
     Contains files and video records for testing selected ICs (e.g., [CH101](https://github.com/Dennis40816/HAND/tree/port_ch101/doc/part_test/port_ch101)) before HAND production.
 
-    ![part_test_ch101](doc/part_test/port_ch101/demo_video/demo_video_reduced.gif)
+    ![part_test_ch101](videos/port_ch101-min.gif)
 
 - **include**  
   Contains HAND firmware configuration header files.
@@ -79,7 +79,7 @@ It is worn on the user's hand back as shown below:
 
         > Note: When testing BQ27427, ensure that the battery is connected.
 
-        ![battery_connected](pictures/battery_connected.png)
+        ![battery_connected](pictures/battery_connected.jpg)
 
     - **hand_module_related**  
       Used for testing modules within hand_modules.
@@ -95,122 +95,164 @@ It is worn on the user's hand back as shown below:
 
 ## Environment Requirement
 
-- **Hardware**  
-  - [Battery 3000 mAh, 1C (custom)](https://pse.is/7cx6h8)  
-  - USB-C cable  
-  - [WITRN U3 USB meter (optional)](https://www.witrn.com/?p=92)  
-  - [DSLogic Logic Analyzer Personal Edition Pro (optional)](https://pse.is/7cx76a)
+### Hardware
 
-- **OS**  
-  - Windows 11
+- [Battery 3000 mAh, 1C (custom)](https://pse.is/7cx6h8)
+- USB-C cable
+- [WITRN U3 USB meter (optional)](https://www.witrn.com/?p=92)
+- [DSLogic Logic Analyzer Personal Edition Pro (optional)](https://pse.is/7cx76a)
 
-- **PlatformIO**  
-  - **Brief**  
-    HAND firmware project is configured and managed using PlatformIO (e.g., ESP-IDF configuration). PlatformIO uses Scons to manage the build process and allows adding an `extra_script.py` in the library for specific process management.  
+### OS
 
-    > [!Warning]
-    > The `platformio.ini` file will only trigger project configuration after it is modified and saved. If changes do not take effect, try adding a random character, saving, then deleting it and saving again to force the configuration.
+- Windows 11
 
-  - **Install**  
-    > **Note:** ESP-IDF will be downloaded by PlatformIO to `$env:HOME/.platformio/packages/framework-espidf`.  
+### PlatformIO
 
-    Please install the PlatformIO plugin in VSCode.  
+HAND firmware project is configured and managed using PlatformIO (e.g., ESP-IDF configuration). PlatformIO uses Scons to manage the build process and allows adding an `extra_script.py` in the library for specific process management.
 
-    ![plugin_platformio](pictures/platformio.png)
+> [!WARNING]
+> The `platformio.ini` file will only trigger project configuration after it is modified and saved. If changes do not take effect, try adding a random character, saving, then deleting it and saving again to force the configuration.
 
-- **Python Virtual Environment**  
-  - **Brief**  
-    In HAND, the Python server that receives Wi-Fi data from the firmware and the conversion process from `.proto` to `.[ch]` files are handled by Python. To avoid conflicts with the existing environment, create an isolated Python virtual environment using tools such as conda, uv, or virtualenv. Below are the package installation requirements.
-  - **TCP Proto Server**  
+#### Install
 
-    | Package  | Version |          Installation          |
-    |:--------:|:-------:|:------------------------------:|
-    | protobuf | 5.27.3  | `pip install protobuf==5.27.3` |
-  
-  - **Scons**  
-    For scripts run by Scons (e.g., `hand_hook.py`), install the required Python packages in PlatformIO's Python environment:
+> [!NOTE]
+> ESP-IDF will be downloaded by PlatformIO to `$env:HOME/.platformio/packages/framework-espidf`.
 
-    ```bash
-    $env:HOME\.platformio\penv\Scripts\python.exe
-    # e.g.,
-    C:\Users\USER\.platformio\penv\Scripts\python.exe
-    ```
+Please install the PlatformIO plugin in VSCode.
 
-    Activate the environment via PowerShell:
+![plugin_platformio](pictures/platformio-min.png)
 
-    ```bash
-    $env:HOME\.platformio\penv\Scripts\Activate.ps1
-    ```
+### Python Virtual Environment
 
-    Then install the packages using:
+In HAND, the Python server that receives Wi-Fi data from the firmware and the conversion process from `.proto` to `.[ch]` files are handled by Python. To avoid conflicts with the existing environment, create an isolated Python virtual environment using tools such as conda, uv, or virtualenv. Below are the package installation requirements.
 
-    ```bash
-    pip install <packages>
-    ```
+#### TCP Proto Server
 
-    |  Package  | Version |      Installation       |
-    |:---------:|:-------:|:-----------------------:|
-    | termcolor |    -    | `pip install termcolor` |
+| Package  | Version |          Installation          |
+|:--------:|:-------:|:------------------------------:|
+| protobuf | 5.27.3  | `pip install protobuf==5.27.3` |
 
-  - **src_filter**  
-    Place an `extra_script.py` in the lib folder to modify PlatformIO's `src_filter`.
+#### Scons
 
-- **Nanopb & ProtoBuf**  
-  
-  > [!Note]
-  > nanopb will be installed automatically by PlatformIO because the dependency of nanopb is already written in platformio.ini.
-  
-  Nanopb is a lightweight C implementation of Google's Protocol Buffers, tailored for embedded systems. It minimizes memory usage and code size, making it ideal for microcontrollers where the full ProtoBuf library would be too heavy.
+For scripts run by Scons (e.g., `hand_hook.py`), install the required Python packages in PlatformIO's Python environment:
 
-  - **For nanopb and C output**  
+```bash
+$env:HOME\.platformio\penv\Scripts\python.exe
+# e.g.,
+C:\Users\USER\.platformio\penv\Scripts\python.exe
+```
 
-    ```bash
-    # make sure you are in the root of the project
-    
-    # try to build once (will fail)
+Activate the environment via PowerShell:
 
-    # open PlatformIO CLI
+```bash
+$env:HOME\.platformio\penv\Scripts\Activate.ps1
+```
 
-    # generate by nanopb_generator.py
-    python .pio/libdeps/hand_firmware/Nanopb/generator/nanopb_generator.py src/hand_modules/hand_data/proto/hand_data.proto
-    ```
+Then install the packages using:
 
-  - **For protobuf and Python output**  
-    - Ensure that [protoc](https://github.com/protocolbuffers/protobuf/releases) is installed and available in your terminal.  
-    - Also, make sure you already installed `protobuf` package in Python.
-    - `protoc` and the Python `protobuf` package are interdependent. Assuming that the author uses `protobuf` version (5.27.3), the corresponding `protoc` version would be [protoc v27.3](https://github.com/protocolbuffers/protobuf/releases/tag/v27.3).
+```bash
+pip install <packages>
+```
 
-    - Compile the protobuf:
+|  Package  | Version |      Installation       |
+|:---------:|:-------:|:-----------------------:|
+| termcolor |    -    | `pip install termcolor` |
 
-      ```bash
-      # make sure you are in the root of the project
+#### src_filter
 
-      # open PlatformIO CLI
+Place an `extra_script.py` in the lib folder to modify PlatformIO's `src_filter`.
 
-      protoc -I=src/hand_modules/hand_data/proto --python_out=tools/tcp_server src/hand_modules/hand_data/proto/hand_data.proto
-      ```
+### Nanopb & ProtoBuf
 
-      If you want to generate code for Flutter, simply replace `--python_out` with `--dart_out`.
+> [!NOTE]
+> Nanopb will be installed automatically by PlatformIO because the dependency of Nanopb is already written in platformio.ini.
 
-- **Others**  
-  - [clang format (optional)](https://releases.llvm.org/download.html)
+Nanopb is a lightweight C implementation of Google's Protocol Buffers, tailored for embedded systems. It minimizes memory usage and code size, making it ideal for microcontrollers where the full ProtoBuf library would be too heavy.
+
+#### For Nanopb and C output
+
+```bash
+# make sure you are in the root of the project
+
+# try to build once (will fail)
+
+# open PlatformIO CLI
+
+# generate by nanopb_generator.py
+python .pio/libdeps/hand_firmware/Nanopb/generator/nanopb_generator.py src/hand_modules/hand_data/proto/hand_data.proto
+```
+
+#### For protobuf and Python output
+
+- Ensure that [protoc](https://github.com/protocolbuffers/protobuf/releases) is installed and available in your terminal.
+- Also, make sure you already installed the `protobuf` package in Python.
+- `protoc` and the Python `protobuf` package are interdependent. Assuming that the author uses `protobuf` version 5.27.3, the corresponding `protoc` version would be [protoc v27.3](https://github.com/protocolbuffers/protobuf/releases/tag/v27.3).
+
+- Compile the protobuf:
+
+```bash
+# make sure you are in the root of the project
+
+# open PlatformIO CLI
+
+protoc -I=src/hand_modules/hand_data/proto --python_out=tools/tcp_server src/hand_modules/hand_data/proto/hand_data.proto
+```
+
+If you want to generate code for Flutter, simply replace `--python_out` with `--dart_out`.
+
+### Others
+
+- [clang format (optional)](https://releases.llvm.org/download.html)
 
 ## Build Tutorial
 
 Once PlatformIO is set up, please run a build once to allow PlatformIO to download the necessary packages. Click on hand firmware ➞ General ➞ Build as shown below:
 
-<img src="pictures/pio_build.png" alt="pio_build" style="max-height:300px; width:auto;" />
+<img src="pictures/pio_build-min.png" width=25%>
 
 ### Firmware
 
-![Watch on YouTube]()
+[Watch on YouTube]()
 
-### Google Protocol Buffer
+### Protocol Buffer
 
-![Watch on YouTube]()
+You should ensure that the ProtoBuf library versions are consistent across all protocol buffer endpoints. On the MCU side, Nanopb is used to generate the `.[ch]` files, but this process still depends on the Python `protobuf` package. On the server side, `.proto` files are compiled to `.py` files using `protoc`, and the Python `protobuf` package is used to process protocol buffer data on the server. Therefore, the versions of `protoc` and the Python `protobuf` package should be aligned, while Nanopb only requires version ≥ 0.4.8.
 
-```bash
-```
+We assume the Python package `protobuf` already installed in your Python virtual environment.
+
+- For MCU
+
+  ```bash
+  ## enter correct python venv, for example:
+  conda activate hand
+
+  ## make sure the directory ".pio/libdeps/hand_firmware/Nanopb" already existed 
+
+  python .pio/libdeps/hand_firmware/Nanopb/generator/nanopb_generator.py src/hand_modules/hand_data/proto/hand_data.proto
+  ```
+
+  ![nanopb_example](pictures/nanopb_example.png)
+
+- For Server
+
+  ```bash
+  ## enter correct python venv, for example:
+  conda activate hand
+
+  ## check protoc version
+  protoc --version
+  # e.g., libprotoc 27.3
+  # e.g., libprotoc 30.2
+
+  ## install python protobuf package
+  # for libprotoc 27.3
+  pip install protobuf==5.27.3
+  # for libprotoc 30.2
+  pip install protobuf==6.30.2
+
+  ## generate python file
+  protoc -I=src/hand_modules/hand_data/proto --python_out=tools/tcp_server src/hand_modules/hand_data/proto/hand_data.proto
+  ```
 
 ### Utils
 
@@ -232,7 +274,7 @@ In powershell, do the following commands
 
 We fixed the HAND on a plane and elevated it, using another plane as the target object, and measured the distance between them.
 
-![static_method](pictures/static_method.png)
+![static_method](pictures/static_method-min.png)
 
 #### Result
 
@@ -240,11 +282,11 @@ For both sensors, the static results showed linearity nearly equal to 1, indicat
 
 **VL53L1X**
 
-![vl53l1x_static](pictures/vl53l1x_static.png)
+![vl53l1x_static](pictures/vl53l1x_static-min.png)
 
 **CH101**
 
-![ch101_static](pictures/ch101_static.png)
+![ch101_static](pictures/ch101_static-min.png)
 
 ### CH101 Beam Pattern
 
@@ -252,18 +294,18 @@ For both sensors, the static results showed linearity nearly equal to 1, indicat
 
 The HAND was fixed on the XPC3 rotating platform for a 180-degree rotation. An iron plate was placed in front of it, putting the CH101 into a simultaneous transmission and reception mode, thereby obtaining the relationship between the angle and the echo intensity.
 
-![beam_method](pictures/beam_method.png)
+![beam_method](pictures/beam_method-min.png)
 
-> [!Note]  
+> [!NOTE]  
 > The CH101 requires an additional shield on the IC to increase the length of its transmitting neck, preventing the signal from being ineffective. Related shield designs are provided on the [CH101 official website](https://invensense.tdk.com/products/ch101/).
 
-![ch101_shield_gif](videos/ch101_shield.gif)
+![ch101_shield_gif](videos/ch101_shield-min.gif)
 
 #### Result
 
 By defining the visible range as the half-energy point (-6 dB), the visible range of the CH101 on the HAND was determined to be approximately 67 degrees in total:
 
-![ch101_beam_result](pictures/ch101_beam_result.png)
+![ch101_beam_result](pictures/ch101_beam_result-min.png)
 
 ### Power Consumption
 
@@ -271,7 +313,7 @@ By defining the visible range as the half-energy point (-6 dB), the visible rang
 
 - WITRN U3 USB Current Meter
 
-    ![u3](pictures/u3.png)
+    ![u3](pictures/u3-min.png)
 
 #### Method
 
@@ -283,9 +325,9 @@ The PC software for the U3 can obtain current and voltage data sampled at 100 Hz
 
 #### Result
 
-![current](pictures/current.png)
+![current](pictures/current-min.png)
 
-From the time-current graph, it can be observed that the idle current averages approximately 26 mA when only the main board is present, and increases to 33 mA with the addition of the sensor board. Under actual operational conditions, both measurement and Wi-Fi transmission contribute to an increase in current consumption. The peaks observed in the graph correspond to transient current surges during Wi-Fi transmission, reaching up to 200 mA, while the ++average current consumption is approximately 86 mA++.
+From the time-current graph, it can be observed that the idle current averages approximately 26 mA when only the main board is present, and increases to 33 mA with the addition of the sensor board. Under actual operational conditions, both measurement and Wi-Fi transmission contribute to an increase in current consumption. The peaks observed in the graph correspond to transient current surges during Wi-Fi transmission, reaching up to 200 mA, while the **average current consumption is approximately 86 mA**.
 
 Based on the battery specifications of the HAND system (3000 mAh, 11.1 Wh), the entire system can remain in standby mode for approximately **66** hours. Under normal operating conditions, the system can operate continuously for around **25.81** hours.
 
@@ -299,7 +341,7 @@ See [hand_simulation](https://github.com/Dennis40816/hand_simulation) for more d
 
 The PDN function operates as expected, reliably providing 5V and 3.3V outputs under a 1A load, and maintains normal performance during both USB plug and unplug events.
 
-![sim_result](pictures/hand_pdn_sim.png)
+![sim_result](pictures/hand_pdn_sim-min.png)
 
 ## Contribution
 
@@ -320,7 +362,7 @@ The PDN function operates as expected, reliably providing 5V and 3.3V outputs un
 1. **Issue Description:**  
    A CMake warning appears indicating that the tool version cannot be retrieved. The error message is as follows:  
 
-   ```
+   ```bash
    CMake Warning at C:/Users/user/.platformio/packages/framework-espidf/tools/cmake/tool_version_check.cmake:41(message):
    Can not get version for tool:
    C:/Users/user/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc.exe
@@ -329,17 +371,29 @@ The PDN function operates as expected, reliably providing 5V and 3.3V outputs un
    **Solution:**  
    Delete the `.git/` folder in `C:/Users/<your-user>/` and rebuild the project.
 
-   ![trouble-pio-1](pictures/trouble-pio-1.png)
+   ![trouble-pio-1](pictures/trouble-pio-1-min.png)
 
 2. **Issue Description:**  
    VSCode has generated a new `build` folder in the root directory of the project, which leads to a build failure.
 
-   ![trouble-pio-2-q](pictures/trouble-pio-2-q.png)
+   ![trouble-pio-2-q](pictures/trouble-pio-2-q-min.png)
 
    **Solution:**  
    In the VSCode `settings.json` file, change the setting `"cmake.configureOnOpen"` to `false`. Then, delete the `build` folder and rebuild the project. Alternatively, disable the CMake extension directly.
+3. **Issue Description:**
+   During the first flash, the ESP32S3 is in its default mode (USB CDC) and must be switched to USB Serial JTAG mode for proper console printing, flashing, and debugging.
 
-3. [CMake Error: grabRef.cmake no file head-ref](https://community.platformio.org/t/cmake-error-grabref-cmake-no-file-head-ref/28119)
+   **Solution:**
+   - Press and hold **BOOT (IO0)** for at least 100 ms.  
+   - Then press and hold **RESET (RST/EN)** for at least 100 ms.  
+   - Release **RESET** first, then release **BOOT**.
+   - Check PIO using `esptool`.
+
+     ![esptool](pictures/ts-esptool.png)
+
+   - If issues persist, delete the `.pio` folder and rebuild the project.
+
+4. [CMake Error: grabRef.cmake no file head-ref](https://community.platformio.org/t/cmake-error-grabref-cmake-no-file-head-ref/28119)
 
 ## Developer Notes
 
@@ -376,6 +430,7 @@ The PDN function operates as expected, reliably providing 5V and 3.3V outputs un
 - porting KX132-1211 driver
 - porting BQ27427 driver
 - fix bugs in BOS1901 driver
+- build proto related file before build procedure
 
 **app**
 
