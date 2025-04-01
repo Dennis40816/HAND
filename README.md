@@ -1,132 +1,383 @@
-# HAND Firmware
+# HAND: A Wearable Embedded ETA Subsystem
 
-This repo contains the firmware code for the HAND main board (esp32-s3-mini). The following repositories are related to making the HAND platform work:
+## Repository Overview
 
-- [HAND firmware (current repo)](https://github.com/Dennis40816/HAND)
-- [HAND main board PCB files](https://github.com/Dennis40816/hand_main_pcb)
-- [HAND FPC board PCB files](https://github.com/Dennis40816/hand_fpc_pcb)
-- [HAND app (written in Flutter)](https://github.com/Dennis40816/hand_app)
+This repository contains the firmware for the ESP32-S3 on the HAND main board and a Python server that receives protocol buffers, along with documentation. Other related repositories are listed in the table below:
 
-## Install Dependencys
+| Repo Name                                                         | Description                                                                                                                  |
+|:------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
+| [hand_pcb](https://github.com/Dennis40816/hand_pcb)               | Contains the PCB files used in HAND.                                                                                         |
+| [hand_simulation](https://github.com/Dennis40816/hand_simulation) | Contains the simulation files for HAND PDN in ORCAD.                                                                         |
+| [hand_app](https://github.com/Dennis40816/hand_app)               | Receives ESP-IDF debug messages from the HAND main board via UDP communication. Future updates plan to integrate protocol buffers and UI, developed using Flutter. |
 
-### Optional
+## About
 
-- Local
+### What Is HAND?
 
-  - [LLVM (clang-format)](https://llvm.org/builds/)
+Haptic Assistance Navigation Device (HAND), as one of the subsystems of an Electronic Travel Aid (ETA), primarily provides basic vibration feedback to assist visually impaired or mobility-challenged individuals in detecting obstacles ahead. HAND integrates ultrasonic and infrared sensing technologies to detect obstacles in the user's path and surrounding environment, and employs piezoelectric vibration motors to generate vibration signals that convey environmental information through tactile means. The device features a wearable design, coupled with an ESP32-S3-MINI microcontroller (equipped with a PCB antenna), enabling real-time data acquisition and transmission, and allowing for data exchange with other assistive devices.
 
-## Problem Shooting
-- [CMake Error: grabRef.cmake no file head-ref](https://community.platformio.org/t/cmake-error-grabref-cmake-no-file-head-ref/28119)
+In addition, HAND's hardware architecture is meticulously designed, including the configuration of the power delivery network (PDN), which ensures stable system operation during USB power switching and charging. Its software system is built on a real-time operating system (RTOS) to manage sensor data collection and vibration signal output, ensuring that all functions operate according to schedule. These design features make HAND a subsystem within the ETA that provides basic vibration feedback, assisting users in acquiring environmental information and thereby potentially enhancing safety and independence during movement.
 
-## Nanopb & ProtoBuf
+### What Is ETA?
 
-- For nanopb and c output, do:
+ETA, which stands for Electronic Travel Aid, is an assistive device specifically designed for visually impaired and mobility-challenged individuals. It employs various sensing technologies such as ultrasonic, infrared, or radar sensors to detect obstacles in the user’s path and surroundings, thereby providing safe mobility assistance. The primary purpose of this device is to help users become aware of environmental changes in real time during movement, reducing the risk of collisions or falls.
+
+Functionally, the ETA can automatically detect obstacles along the path and alert the user through auditory signals, vibrations, or other feedback mechanisms to take evasive action. Moreover, some advanced ETA models are integrated with GPS or mapping functions, offering real-time navigation and route planning to assist users in finding the best path in complex or unfamiliar environments. This combination of multiple technologies enables the ETA to be effective in both indoor and outdoor settings.
+
+In terms of its purpose, the core objective of the ETA is to enhance the user's independence and safety. Through precise sensing and real-time feedback, visually impaired or mobility-challenged individuals can rely less on external assistance, thereby gaining more confidence and freedom in their daily lives. At the same time, it helps alleviate the burden on caregivers and promotes a broader societal awareness and improvement of accessible environments.
+
+## Appearance
+
+|              | Front                                     | Back                                                     |
+|:------------:| ----------------------------------------- | -------------------------------------------------------- |
+|  Main Board  | ![main_board](pictures/hand_main.png)     | ![main_board back side](pictures/hand_main_back.png)     |
+| Sensor Board | ![sensor_board](pictures/hand_sensor.png) | ![sensor_board back side](pictures/hand_sensor_back.png) |
+
+The combination of the main board and the sensor board is shown below:
+
+![combination](pictures/hand_combination.png)
+
+It is worn on the user's hand back as shown below:
+
+![wearable](pictures/hand_wearable.png)
+
+## Directory Description
+
+- **doc**  
+  Contains documentation and other related experimental files.
+  - **data**  
+    Contains sample data formats returned by HAND firmware, along with their descriptions.
+  - **part_test**  
+    Contains files and video records for testing selected ICs (e.g., [CH101](https://github.com/Dennis40816/HAND/tree/port_ch101/doc/part_test/port_ch101)) before HAND production.
+
+    ![part_test_ch101](doc/part_test/port_ch101/demo_video/demo_video_reduced.gif)
+
+- **include**  
+  Contains HAND firmware configuration header files.
+
+- **lib**  
+  Contains driver libraries for the ICs used in HAND:
+  - BOS1901
+  - VL53L1X
+  - CH101
+  - TCA6408A
+
+- **scripts**  
+  Contains hook scripts for PlatformIO or data processing scripts.
+
+- **src**  
+  Contains HAND ESP-IDF code, divided into modules by functionality:
+  - **espidf_framework_test**  
+    Contains test programs for ESP-IDF (including FreeRTOS).
+  - **hand_modules**  
+    Contains all modules as HAND is designed in a modular manner.
+  - **hand_test**  
+    This project is in the early stages of HAND, mainly for testing the proper functioning of ICs and sensor features. Note: Each file in hand_test contains an `app_main` function, so having more than one `.c` file in the same directory will cause compilation errors.
+    - **device_related**  
+      - *group_test* : Integrates tests for multiple ICs, currently including VL53L1X group, CH101 group, and a combined test of VL53L1X and CH101.
+      - *id_test* : Each IC has a basic operational test (e.g., reading the `whoami` register), and all basic tests are placed here.  
+
+        > Note: When testing BQ27427, ensure that the battery is connected.
+
+        ![battery_connected](pictures/battery_connected.png)
+
+    - **hand_module_related**  
+      Used for testing modules within hand_modules.
+
+- **test**  
+  Contains independently executable programs. Running the following command:
 
   ```bash
-  # make sure you are in the root of project
-
-  # open platformio CLI
-
-  # generate by nanopb_generator.py
-  python .pio\libdeps\hand_firmware\Nanopb\generator\nanopb_generator.py src\hand_modules\hand_data\proto\hand_data.proto
+  pio test -v
   ```
 
-- For protobuf and python output, do
+  will execute all tests, or a specific target can be set in `platformio.ini`.
 
-  - make sure you already install protoc and it's available cmd from your terminal
+## Environment Requirement
 
-  ```bash
-  # make sure you are in the root of project
+- **Hardware**  
+  - [Battery 3000 mAh, 1C (custom)](https://pse.is/7cx6h8)  
+  - USB-C cable  
+  - [WITRN U3 USB meter (optional)](https://www.witrn.com/?p=92)  
+  - [DSLogic Logic Analyzer Personal Edition Pro (optional)](https://pse.is/7cx76a)
 
-  # open platformio CLI
+- **OS**  
+  - Windows 11
 
-  # make sure you have protobuf in python
-  pip install protobuf
+- **PlatformIO**  
+  - **Brief**  
+    HAND firmware project is configured and managed using PlatformIO (e.g., ESP-IDF configuration). PlatformIO uses Scons to manage the build process and allows adding an `extra_script.py` in the library for specific process management.  
 
-  # compile protobuf
-  protoc -I=src/hand_modules/hand_data/proto --python_out=tools/tcp_server src/hand_modules/hand_data/proto/hand_data.proto
-  ```
+    > [!Warning]
+    > The `platformio.ini` file will only trigger project configuration after it is modified and saved. If changes do not take effect, try adding a random character, saving, then deleting it and saving again to force the configuration.
 
-## Part test
+  - **Install**  
+    > **Note:** ESP-IDF will be downloaded by PlatformIO to `$env:HOME/.platformio/packages/framework-espidf`.  
 
-- [CH-101 on ESP32-S3-MINI](https://github.com/Dennis40816/HAND/tree/port_ch101/doc/part_test/port_ch101)
+    Please install the PlatformIO plugin in VSCode.  
 
-## TODO list
+    ![plugin_platformio](pictures/platformio.png)
 
-### chore
+- **Python Virtual Environment**  
+  - **Brief**  
+    In HAND, the Python server that receives Wi-Fi data from the firmware and the conversion process from `.proto` to `.[ch]` files are handled by Python. To avoid conflicts with the existing environment, create an isolated Python virtual environment using tools such as conda, uv, or virtualenv. Below are the package installation requirements.
+  - **TCP Proto Server**  
 
-- Add .clang-format-ignore file
-- Add auto format when pio build
+    | Package  | Version |          Installation          |
+    |:--------:|:-------:|:------------------------------:|
+    | protobuf | 5.27.3  | `pip install protobuf==5.27.3` |
+  
+  - **Scons**  
+    For scripts run by Scons (e.g., `hand_hook.py`), install the required Python packages in PlatformIO's Python environment:
 
-### lib
+    ```bash
+    $env:HOME\.platformio\penv\Scripts\python.exe
+    # e.g.,
+    C:\Users\USER\.platformio\penv\Scripts\python.exe
+    ```
 
-- TO CHECL: Can we use `GPIO_MODE_OUTPUT_INPUT` for ch101 lib?
+    Activate the environment via PowerShell:
 
-## About build flags
+    ```bash
+    $env:HOME\.platformio\penv\Scripts\Activate.ps1
+    ```
 
-- In platformio.ini, we can add build flags like this:
+    Then install the packages using:
 
-  - `-DLIB_PLATFORM=espidf`: This define specifies the target platform for all libraries in the lib folder. In the current version, all libraries are written targeting the espidf platform.
+    ```bash
+    pip install <packages>
+    ```
 
-## Test
+    |  Package  | Version |      Installation       |
+    |:---------:|:-------:|:-----------------------:|
+    | termcolor |    -    | `pip install termcolor` |
 
-- [PIO test hierarchy](https://docs.platformio.org/en/stable/advanced/unit-testing/structure/hierarchy.html)
-- Using `test_filter` when you only want to test specific dir:
+  - **src_filter**  
+    Place an `extra_script.py` in the lib folder to modify PlatformIO's `src_filter`.
 
-  ```
-  test_filter = test_tca6408a ;disable this if you want to go through all tests
-  ```
+- **Nanopb & ProtoBuf**  
+  
+  > [!Note]
+  > nanopb will be installed automatically by PlatformIO because the dependency of nanopb is already written in platformio.ini.
+  
+  Nanopb is a lightweight C implementation of Google's Protocol Buffers, tailored for embedded systems. It minimizes memory usage and code size, making it ideal for microcontrollers where the full ProtoBuf library would be too heavy.
 
-- Subfolder must start with `test_...`
-- how to run pio test?
+  - **For nanopb and C output**  
 
-  ```
-  pio test -e hand_test -vv
-  ```
+    ```bash
+    # make sure you are in the root of the project
+    
+    # try to build once (will fail)
 
-## Platform dependent code
+    # open PlatformIO CLI
 
-- When using python, please choose the correct platform io python env:
+    # generate by nanopb_generator.py
+    python .pio/libdeps/hand_firmware/Nanopb/generator/nanopb_generator.py src/hand_modules/hand_data/proto/hand_data.proto
+    ```
 
-  - e.g., `C:\Users\USER\.platformio\penv\Scripts\python.exe`. You need to find your own path.
-  - use pip to install `termcolor`
+  - **For protobuf and Python output**  
+    - Ensure that [protoc](https://github.com/protocolbuffers/protobuf/releases) is installed and available in your terminal.  
+    - Also, make sure you already installed `protobuf` package in Python.
+    - `protoc` and the Python `protobuf` package are interdependent. Assuming that the author uses `protobuf` version (5.27.3), the corresponding `protoc` version would be [protoc v27.3](https://github.com/protocolbuffers/protobuf/releases/tag/v27.3).
 
-- Put an `extra_script.py` in lib folder to change `pio's src_filter`
+    - Compile the protobuf:
 
-## How to get build logs
+      ```bash
+      # make sure you are in the root of the project
 
-- In powershell, do the following instruction
+      # open PlatformIO CLI
+
+      protoc -I=src/hand_modules/hand_data/proto --python_out=tools/tcp_server src/hand_modules/hand_data/proto/hand_data.proto
+      ```
+
+      If you want to generate code for Flutter, simply replace `--python_out` with `--dart_out`.
+
+- **Others**  
+  - [clang format (optional)](https://releases.llvm.org/download.html)
+
+## Build Tutorial
+
+Once PlatformIO is set up, please run a build once to allow PlatformIO to download the necessary packages. Click on hand firmware ➞ General ➞ Build as shown below:
+
+<img src="pictures/pio_build.png" alt="pio_build" style="max-height:300px; width:auto;" />
+
+### Firmware
+
+![Watch on YouTube]()
+
+### Google Protocol Buffer
+
+![Watch on YouTube]()
+
+```bash
+```
+
+### Utils
+
+> How to get build logs?
+
+In powershell, do the following commands
 
   ```ps1
   pio run -e hand_firmware -vv 2>&1 | Tee-Object -FilePath <log-name>
   ```
 
-## Notes on Writing `extra_script.py` in the Library
+## Demo
 
-- In the library, ensure that all required files (including `.c` files) have their parent folders included in either:
+## Experiments
 
-  1. The `build` flags in `library.json` (`-I` flags)
-  2. Using `env.Append(CPPPATH=[absolute_path])` in `extra_script.py`
+### Static Distance Test
 
-  Choose one of these methods. If dynamic adjustments are needed (e.g., through platformio.ini `build_flags`), it can be implemented in `extra_script.py`. For an example, refer to VL53L1X.
+#### Method
 
-- Ensure that `src` is not used as the top-level folder name in the library. If `src` must be used as the top-level folder, ensure that it contains only `src` and `inc` folders. Adding other folders and referencing them from `src` can lead to compilation errors (e.g., undefined reference error). For an example, see the VL53L1X library; changing the `source` to `src` can cause compilation errors.
+We fixed the HAND on a plane and elevated it, using another plane as the target object, and measured the distance between them.
 
-- srcFilter 的功能是決定要不要讓該資料夾裡面的內容進行編譯(推測是產生 .o)，而 -I 則決定其他文件是否在 include 階段能夠看見該文件。因此兩者都需要在 extra_script.py 進行配置(詳見 VL53L1X Lib)
+![static_method](pictures/static_method.png)
 
-## 如果 include path 沒有更新
+#### Result
 
-- include path 的更新取決於兩點
+For both sensors, the static results showed linearity nearly equal to 1, indicating that the integrated sensors can operate stably. It is noteworthy that the CH101 also receives reflections from the ground, so the angle relative to the ground should be taken into consideration.
 
-  - 位於 extra_script.py 的 include path => 需要重新 build
-  - 位於 library.json, CMakeLists.txt, platformio.ini 的 build flags `-I` => 需要偵測到 platformio.ini 更新時才會改動，可以簡單的刪除一個符號再重新加上後儲存即可
+**VL53L1X**
 
-## 觀察
+![vl53l1x_static](pictures/vl53l1x_static.png)
 
-- 直接 include 能夠覆蓋，但是隔著檔案 include 則不能覆蓋 => 並不是這樣的，而是到底是在 header 還是 src 引入實作要用的 header 會影響 macro 內部是否能夠覆蓋
+**CH101**
+
+![ch101_static](pictures/ch101_static.png)
+
+### CH101 Beam Pattern
+
+#### Method
+
+The HAND was fixed on the XPC3 rotating platform for a 180-degree rotation. An iron plate was placed in front of it, putting the CH101 into a simultaneous transmission and reception mode, thereby obtaining the relationship between the angle and the echo intensity.
+
+![beam_method](pictures/beam_method.png)
+
+> [!Note]  
+> The CH101 requires an additional shield on the IC to increase the length of its transmitting neck, preventing the signal from being ineffective. Related shield designs are provided on the [CH101 official website](https://invensense.tdk.com/products/ch101/).
+
+![ch101_shield_gif](videos/ch101_shield.gif)
+
+#### Result
+
+By defining the visible range as the half-energy point (-6 dB), the visible range of the CH101 on the HAND was determined to be approximately 67 degrees in total:
+
+![ch101_beam_result](pictures/ch101_beam_result.png)
+
+### Power Consumption
+
+#### Hardware
+
+- WITRN U3 USB Current Meter
+
+    ![u3](pictures/u3.png)
+
+#### Method
+
+The PC software for the U3 can obtain current and voltage data sampled at 100 Hz. Since it is powered via USB, the voltage is fixed (approximately 5.1 V). Measurements are taken under the following conditions:
+
+- Main board only, idle state
+- Main board + sensor board, idle state
+- Main board + sensor board, performing measurement and Wi-Fi transmission
+
+#### Result
+
+![current](pictures/current.png)
+
+From the time-current graph, it can be observed that the idle current averages approximately 26 mA when only the main board is present, and increases to 33 mA with the addition of the sensor board. Under actual operational conditions, both measurement and Wi-Fi transmission contribute to an increase in current consumption. The peaks observed in the graph correspond to transient current surges during Wi-Fi transmission, reaching up to 200 mA, while the ++average current consumption is approximately 86 mA++.
+
+Based on the battery specifications of the HAND system (3000 mAh, 11.1 Wh), the entire system can remain in standby mode for approximately **66** hours. Under normal operating conditions, the system can operate continuously for around **25.81** hours.
+
+### HAND Power Delivery Network (PDN) Simulation
+
+#### Method
+
+See [hand_simulation](https://github.com/Dennis40816/hand_simulation) for more details.
+
+#### Result
+
+The PDN function operates as expected, reliably providing 5V and 3.3V outputs under a 1A load, and maintains normal performance during both USB plug and unplug events.
+
+![sim_result](pictures/hand_pdn_sim.png)
+
+## Contribution
+
+- porting drivers
+  - porting CH101 to ESP-IDF
+  - porting VL53L1X to ESP-IDF
+- develop drivers
+  - TCA6408A
+  - BOS1901
+- design a chargable embbded system
+- get HAND basic hardware characteristic and proof it works
+- integrate sensor on **Flexible PCB**
+
+## Trouble Shooting
+
+### PlatformIO
+
+1. **Issue Description:**  
+   A CMake warning appears indicating that the tool version cannot be retrieved. The error message is as follows:  
+
+   ```
+   CMake Warning at C:/Users/user/.platformio/packages/framework-espidf/tools/cmake/tool_version_check.cmake:41(message):
+   Can not get version for tool:
+   C:/Users/user/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc.exe
+   ```
+
+   **Solution:**  
+   Delete the `.git/` folder in `C:/Users/<your-user>/` and rebuild the project.
+
+   ![trouble-pio-1](pictures/trouble-pio-1.png)
+
+2. **Issue Description:**  
+   VSCode has generated a new `build` folder in the root directory of the project, which leads to a build failure.
+
+   ![trouble-pio-2-q](pictures/trouble-pio-2-q.png)
+
+   **Solution:**  
+   In the VSCode `settings.json` file, change the setting `"cmake.configureOnOpen"` to `false`. Then, delete the `build` folder and rebuild the project. Alternatively, disable the CMake extension directly.
+
+3. [CMake Error: grabRef.cmake no file head-ref](https://community.platformio.org/t/cmake-error-grabref-cmake-no-file-head-ref/28119)
+
+## Developer Notes
+
+### Writing `extra_script.py` in the Library
+
+- Ensure that all required files (including `.c` files) have their parent directories included in the build process. You can either add the necessary `-I` flags in `library.json` or use `env.Append(CPPPATH=[absolute_path])` in `extra_script.py`.
+- For dynamic adjustments (e.g., modifications through the `platformio.ini` file), implement logic in `extra_script.py` to adapt build flags accordingly.
+- **My Thoughts (based on PlatformIO):**  
+  In my experience with PlatformIO, a well-organized `extra_script.py` can significantly reduce debugging time related to include path issues. It not only streamlines conditional compilation but also ensures that libraries remain modular and maintainable, especially when supporting multiple platforms with different include requirements.
+
+### Updating Include Paths
+
+- Include path updates rely on two factors:
+  1. Modifications in `extra_script.py` (which require a rebuild for changes to take effect).
+  2. Changes in `library.json`, `CMakeLists.txt`, or `platformio.ini` that modify build flags with `-I`. These may not be recognized until PlatformIO detects the change. A simple method to force an update is to add and then remove a character in the file.
+- **My Thoughts (based on PlatformIO):**  
+  PlatformIO can be quite aggressive in caching build configurations. Occasionally, a manual clean or rebuild is necessary to ensure that new include paths are properly integrated. Using the IDE's "Clean" function can help alleviate such issues.
+
+### Observations
+
+- Directly including a header file can override existing definitions, whereas including it indirectly (through another file) might not yield the expected overrides.  
+- This emphasizes the importance of maintaining a clear and consistent include hierarchy and managing dependencies explicitly.
 
 ## Alias Name List
 
-- PPB: Ping Pong Buffer
-- SS: Stack Size (for FreeRTOS task size)
-- HAND: Haptic Assitance Navigation Device
+- **PPB:** Ping Pong Buffer  
+- **SS:** Stack Size (for FreeRTOS task size)  
+- **HAND:** Haptic Assistance Navigation Device
+
+## TODO
+
+**firmware**
+
+- porting KX132-1211 driver
+- porting BQ27427 driver
+- fix bugs in BOS1901 driver
+
+**app**
+
+- add realtime plot
+- add control panel
