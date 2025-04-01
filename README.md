@@ -165,11 +165,11 @@ Place an `extra_script.py` in the lib folder to modify PlatformIO's `src_filter`
 ### Nanopb & ProtoBuf
 
 > [!NOTE]
-> nanopb will be installed automatically by PlatformIO because the dependency of nanopb is already written in platformio.ini.
+> Nanopb will be installed automatically by PlatformIO because the dependency of Nanopb is already written in platformio.ini.
 
 Nanopb is a lightweight C implementation of Google's Protocol Buffers, tailored for embedded systems. It minimizes memory usage and code size, making it ideal for microcontrollers where the full ProtoBuf library would be too heavy.
 
-#### For nanopb and C output
+#### For Nanopb and C output
 
 ```bash
 # make sure you are in the root of the project
@@ -212,14 +212,47 @@ Once PlatformIO is set up, please run a build once to allow PlatformIO to downlo
 
 ### Firmware
 
-![Watch on YouTube]()
+[Watch on YouTube]()
 
-### Google Protocol Buffer
+### Protocol Buffer
 
-![Watch on YouTube]()
+You should ensure that the ProtoBuf library versions are consistent across all protocol buffer endpoints. On the MCU side, Nanopb is used to generate the `.[ch]` files, but this process still depends on the Python `protobuf` package. On the server side, `.proto` files are compiled to `.py` files using `protoc`, and the Python `protobuf` package is used to process protocol buffer data on the server. Therefore, the versions of `protoc` and the Python `protobuf` package should be aligned, while Nanopb only requires version ≥ 0.4.8.
 
-```bash
-```
+We assume the Python package `protobuf` already installed in your Python virtual environment.
+
+- For MCU
+
+  ```bash
+  ## enter correct python venv, for example:
+  conda activate hand
+
+  ## make sure the directory ".pio/libdeps/hand_firmware/Nanopb" already existed 
+
+  python .pio/libdeps/hand_firmware/Nanopb/generator/nanopb_generator.py src/hand_modules/hand_data/proto/hand_data.proto
+  ```
+
+  ![nanopb_example](pictures/nanopb_example.png)
+
+- For Server
+
+  ```bash
+  ## enter correct python venv, for example:
+  conda activate hand
+
+  ## check protoc version
+  protoc --version
+  # e.g., libprotoc 27.3
+  # e.g., libprotoc 30.2
+
+  ## install python protobuf package
+  # for libprotoc 27.3
+  pip install protobuf==5.27.3
+  # for libprotoc 30.2
+  pip install protobuf==6.30.2
+
+  ## generate python file
+  protoc -I=src/hand_modules/hand_data/proto --python_out=tools/tcp_server src/hand_modules/hand_data/proto/hand_data.proto
+  ```
 
 ### Utils
 
@@ -294,7 +327,7 @@ The PC software for the U3 can obtain current and voltage data sampled at 100 Hz
 
 ![current](pictures/current-min.png)
 
-From the time-current graph, it can be observed that the idle current averages approximately 26 mA when only the main board is present, and increases to 33 mA with the addition of the sensor board. Under actual operational conditions, both measurement and Wi-Fi transmission contribute to an increase in current consumption. The peaks observed in the graph correspond to transient current surges during Wi-Fi transmission, reaching up to 200 mA, while the ++average current consumption is approximately 86 mA++.
+From the time-current graph, it can be observed that the idle current averages approximately 26 mA when only the main board is present, and increases to 33 mA with the addition of the sensor board. Under actual operational conditions, both measurement and Wi-Fi transmission contribute to an increase in current consumption. The peaks observed in the graph correspond to transient current surges during Wi-Fi transmission, reaching up to 200 mA, while the **average current consumption is approximately 86 mA**.
 
 Based on the battery specifications of the HAND system (3000 mAh, 11.1 Wh), the entire system can remain in standby mode for approximately **66** hours. Under normal operating conditions, the system can operate continuously for around **25.81** hours.
 
@@ -329,7 +362,7 @@ The PDN function operates as expected, reliably providing 5V and 3.3V outputs un
 1. **Issue Description:**  
    A CMake warning appears indicating that the tool version cannot be retrieved. The error message is as follows:  
 
-   ```
+   ```bash
    CMake Warning at C:/Users/user/.platformio/packages/framework-espidf/tools/cmake/tool_version_check.cmake:41(message):
    Can not get version for tool:
    C:/Users/user/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc.exe
@@ -347,8 +380,20 @@ The PDN function operates as expected, reliably providing 5V and 3.3V outputs un
 
    **Solution:**  
    In the VSCode `settings.json` file, change the setting `"cmake.configureOnOpen"` to `false`. Then, delete the `build` folder and rebuild the project. Alternatively, disable the CMake extension directly.
+3. **Issue Description:**
+   During the first flash, the ESP32S3 is in its default mode (USB CDC) and must be switched to USB Serial JTAG mode for proper console printing, flashing, and debugging.
 
-3. [CMake Error: grabRef.cmake no file head-ref](https://community.platformio.org/t/cmake-error-grabref-cmake-no-file-head-ref/28119)
+   **Solution:**
+   - Press and hold **BOOT (IO0)** for at least 100 ms.  
+   - Then press and hold **RESET (RST/EN)** for at least 100 ms.  
+   - Release **RESET** first, then release **BOOT**.
+   - Check PIO using `esptool`.
+
+     ![esptool](pictures/ts-esptool.png)
+
+   - If issues persist, delete the `.pio` folder and rebuild the project.
+
+4. [CMake Error: grabRef.cmake no file head-ref](https://community.platformio.org/t/cmake-error-grabref-cmake-no-file-head-ref/28119)
 
 ## Developer Notes
 
@@ -385,6 +430,7 @@ The PDN function operates as expected, reliably providing 5V and 3.3V outputs un
 - porting KX132-1211 driver
 - porting BQ27427 driver
 - fix bugs in BOS1901 driver
+- build proto related file before build procedure
 
 **app**
 
