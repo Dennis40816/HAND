@@ -1,3 +1,5 @@
+![hand-icon](pictures/hand-icon-min.png)
+
 # HAND: A Wearable Embedded ETA Subsystem
 
 ## Repository Overview
