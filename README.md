@@ -5,7 +5,7 @@
 This repository contains the firmware for the ESP32-S3 on the HAND main board and a Python server that receives protocol buffers, along with documentation. Other related repositories are listed in the table below:
 
 | Repo Name                                                         | Description                                                                                                                  |
-|:------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
+|:------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
 | [hand_pcb](https://github.com/Dennis40816/hand_pcb)               | Contains the PCB files used in HAND.                                                                                         |
 | [hand_simulation](https://github.com/Dennis40816/hand_simulation) | Contains the simulation files for HAND PDN in ORCAD.                                                                         |
 | [hand_app](https://github.com/Dennis40816/hand_app)               | Receives ESP-IDF debug messages from the HAND main board via UDP communication. Future updates plan to integrate protocol buffers and UI, developed using Flutter. |
@@ -15,6 +15,8 @@ This repository contains the firmware for the ESP32-S3 on the HAND main board an
 ### What Is HAND?
 
 Haptic Assistance Navigation Device (HAND), as one of the subsystems of an Electronic Travel Aid (ETA), primarily provides basic vibration feedback to assist visually impaired or mobility-challenged individuals in detecting obstacles ahead. HAND integrates ultrasonic and infrared sensing technologies to detect obstacles in the user's path and surrounding environment, and employs piezoelectric vibration motors to generate vibration signals that convey environmental information through tactile means. The device features a wearable design, coupled with an ESP32-S3-MINI microcontroller (equipped with a PCB antenna), enabling real-time data acquisition and transmission, and allowing for data exchange with other assistive devices.
+
+![hand_sch](pictures/hand_sch-min.png)
 
 In addition, HAND's hardware architecture is meticulously designed, including the configuration of the power delivery network (PDN), which ensures stable system operation during USB power switching and charging. Its software system is built on a real-time operating system (RTOS) to manage sensor data collection and vibration signal output, ensuring that all functions operate according to schedule. These design features make HAND a subsystem within the ETA that provides basic vibration feedback, assisting users in acquiring environmental information and thereby potentially enhancing safety and independence during movement.
 
@@ -210,11 +212,18 @@ Once PlatformIO is set up, please run a build once to allow PlatformIO to downlo
 
 <img src="pictures/pio_build-min.png" width=25%>
 
-### Firmware
+### Firmware & Software
 
-[Watch on YouTube]()
+Please ensure that the following plugins are already installed in your VSCode:
 
-### Protocol Buffer
+- PlatformIO IDE
+- Dart
+
+[Watch on YouTube](https://youtu.be/n_mYqOc-Ve4)
+
+[![Watch the video](https://img.youtube.com/vi/n_mYqOc-Ve4/maxresdefault.jpg)](https://youtu.be/n_mYqOc-Ve4)
+
+### Protocol Buffers
 
 You should ensure that the ProtoBuf library versions are consistent across all protocol buffer endpoints. On the MCU side, Nanopb is used to generate the `.[ch]` files, but this process still depends on the Python `protobuf` package. On the server side, `.proto` files are compiled to `.py` files using `protoc`, and the Python `protobuf` package is used to process protocol buffer data on the server. Therefore, the versions of `protoc` and the Python `protobuf` package should be aligned, while Nanopb only requires version ≥ 0.4.8.
 
@@ -393,7 +402,7 @@ The PDN function operates as expected, reliably providing 5V and 3.3V outputs un
    - Release **RESET** first, then release **BOOT**.
    - Check PIO using `esptool`.
 
-     ![esptool](pictures/ts-esptool.png)
+      <img src="pictures/ts-esptool.png" width=30%>
 
    - If issues persist, delete the `.pio` folder and rebuild the project.
 
