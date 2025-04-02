@@ -269,11 +269,27 @@ We assume the Python package `protobuf` already installed in your Python virtual
 
 > How to get build logs?
 
-In powershell, do the following commands
+Open PlatformIO Core CLI:
 
-  ```ps1
-  pio run -e hand_firmware -vv 2>&1 | Tee-Object -FilePath <log-name>
-  ```
+<img src="pictures/pio_core_cli.png" width=30%>
+
+Please do not activate a Conda virtual environment within the CLI. Doing so may cause PlatformIO to use the Python interpreter from the Conda environment, which can lead to unexpected behavior.
+
+> [!WARNING]
+> If you choose to activate the Conda virtual environment:
+>
+> ```bash
+> conda activate <your-env>
+> pip install platformio
+> ```
+>
+> Doing so might compromise the stability of the PlatformIO Core CLI environment and is therefore **discouraged**.
+
+Run the following command:
+
+```ps1
+pio run -e hand_firmware -vv 2>&1 | Tee-Object -FilePath <log-name>
+```
 
 ## Demo
 
